@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface User {
   id: string;
@@ -10,6 +11,13 @@ interface User {
   nombre: string;
   rol: string;
   avatarUrl?: string | null;
+}
+
+interface Counts {
+  empresas: number;
+  empleados: number;
+  asistencias: number;
+  usuarios: number;
 }
 
 export default function DashboardLayout({
@@ -20,9 +28,16 @@ export default function DashboardLayout({
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [counts, setCounts] = useState<Counts>({
+    empresas: 0,
+    empleados: 0,
+    asistencias: 0,
+    usuarios: 0,
+  });
 
   useEffect(() => {
     checkAuth();
+    loadCounts();
   }, []);
 
   const checkAuth = async () => {
@@ -38,6 +53,33 @@ export default function DashboardLayout({
       router.push('/login');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadCounts = async () => {
+    try {
+      const [empresasRes, empleadosRes, asistenciasRes, usuariosRes] = await Promise.all([
+        fetch('/api/empresas'),
+        fetch('/api/empleados'),
+        fetch('/api/asistencias'),
+        fetch('/api/usuarios'),
+      ]);
+
+      const [empresas, empleados, asistencias, usuarios] = await Promise.all([
+        empresasRes.json(),
+        empleadosRes.json(),
+        asistenciasRes.json(),
+        usuariosRes.json(),
+      ]);
+
+      setCounts({
+        empresas: empresas.length || 0,
+        empleados: empleados.length || 0,
+        asistencias: asistencias.length || 0,
+        usuarios: usuarios.length || 0,
+      });
+    } catch (error) {
+      console.error('Error cargando contadores:', error);
     }
   };
 
@@ -89,6 +131,11 @@ export default function DashboardLayout({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
               <span className="font-medium">Empresas</span>
+              {counts.empresas > 0 && (
+                <span className="ml-auto bg-primary-100 text-primary-600 text-xs font-semibold px-2 py-1 rounded-full">
+                  {counts.empresas}
+                </span>
+              )}
             </Link>
 
             <Link
@@ -99,6 +146,11 @@ export default function DashboardLayout({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
               <span className="font-medium">Empleados</span>
+              {counts.empleados > 0 && (
+                <span className="ml-auto bg-primary-100 text-primary-600 text-xs font-semibold px-2 py-1 rounded-full">
+                  {counts.empleados}
+                </span>
+              )}
             </Link>
 
             <Link
@@ -109,6 +161,11 @@ export default function DashboardLayout({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
               </svg>
               <span className="font-medium">Asistencias</span>
+              {counts.asistencias > 0 && (
+                <span className="ml-auto bg-primary-100 text-primary-600 text-xs font-semibold px-2 py-1 rounded-full">
+                  {counts.asistencias}
+                </span>
+              )}
             </Link>
 
             <Link
@@ -119,6 +176,11 @@ export default function DashboardLayout({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
               <span className="font-medium">Usuarios</span>
+              {counts.usuarios > 0 && (
+                <span className="ml-auto bg-primary-100 text-primary-600 text-xs font-semibold px-2 py-1 rounded-full">
+                  {counts.usuarios}
+                </span>
+              )}
             </Link>
 
             <Link
@@ -131,6 +193,18 @@ export default function DashboardLayout({
               <span className="font-medium">Integraciones</span>
             </Link>
           </nav>
+
+          {/* Logo section */}
+          <div className="p-6 flex items-center justify-center">
+            <Image
+              src="/logo.png"
+              alt="OpenAttendify Logo"
+              width={120}
+              height={120}
+              className="rounded-2xl shadow-lg"
+              priority
+            />
+          </div>
 
           {/* User section */}
           <div className="p-4 border-t">

@@ -71,7 +71,7 @@ model Empleado {
   id            String      @id @default(cuid())
   codigo        String      @unique // Código autogenerado (ej: 10001)
   nombre        String
-  apellido      String
+  apellido      String?
   dni           String      @unique
   password      String?     // Contraseña para el empleado
   avatarUrl     String?     @db.Text // Avatar del empleado
