@@ -3,6 +3,8 @@ import { verifyToken } from '@/lib/jwt';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+
 const asistenciaSchema = z.object({
   empleadoId: z.string(),
   checkIn: z.string(),
