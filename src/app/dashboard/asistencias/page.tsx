@@ -22,6 +22,8 @@ interface Asistencia {
   observaciones: string | null;
   odooAttendanceId: number | null;
   odooError: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function AsistenciasPage() {
@@ -38,6 +40,28 @@ export default function AsistenciasPage() {
     checkOut: '',
     observaciones: '',
   });
+  
+  // Estados para filtros
+  const [filtros, setFiltros] = useState({
+    empleadoId: '',
+    empresaId: '',
+    fechaInicio: '',
+    fechaFin: '',
+    busqueda: '',
+  });
+
+  // Estados para columnas visibles
+  const [columnasVisibles, setColumnasVisibles] = useState({
+    empleado: true,
+    checkIn: true,
+    checkOut: true,
+    horas: true,
+    empresa: true,
+    estadoOdoo: true,
+    creado: false,
+    editado: false,
+  });
+  const [showColumnMenu, setShowColumnMenu] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -177,6 +201,113 @@ export default function AsistenciasPage() {
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
+  const calcularHorasTrabajadas = (checkIn: string, checkOut: string | null): number => {
+    if (!checkOut) return 0;
+    const entrada = new Date(checkIn);
+    const salida = new Date(checkOut);
+    const diff = salida.getTime() - entrada.getTime();
+    return Math.max(0, diff / (1000 * 60 * 60)); // Convertir a horas
+  };
+
+  const formatearHoras = (horas: number): string => {
+    const horasEnteras = Math.floor(horas);
+    const minutos = Math.round((horas - horasEnteras) * 60);
+    return `${horasEnteras}h ${minutos}m`;
+  };
+
+  // Función para filtrar asistencias
+  const asistenciasFiltradas = asistencias.filter((asistencia) => {
+    // Filtro por empleado
+    if (filtros.empleadoId && asistencia.empleado.id !== filtros.empleadoId) {
+      return false;
+    }
+    
+    // Filtro por empresa
+    if (filtros.empresaId && asistencia.empleado.empresa.id !== filtros.empresaId) {
+      return false;
+    }
+    
+    // Filtro por fecha inicio
+    if (filtros.fechaInicio) {
+      const fechaAsistencia = new Date(asistencia.checkIn);
+      const fechaInicioFiltro = new Date(filtros.fechaInicio);
+      if (fechaAsistencia < fechaInicioFiltro) {
+        return false;
+      }
+    }
+    
+    // Filtro por fecha fin
+    if (filtros.fechaFin) {
+      const fechaAsistencia = new Date(asistencia.checkIn);
+      const fechaFinFiltro = new Date(filtros.fechaFin);
+      fechaFinFiltro.setHours(23, 59, 59, 999); // Incluir todo el día
+      if (fechaAsistencia > fechaFinFiltro) {
+        return false;
+      }
+    }
+    
+    // Filtro por búsqueda de texto (nombre, apellido, DNI)
+    if (filtros.busqueda) {
+      const busquedaLower = filtros.busqueda.toLowerCase();
+      const nombreCompleto = `${asistencia.empleado.nombre} ${asistencia.empleado.apellido}`.toLowerCase();
+      const dni = asistencia.empleado.dni.toLowerCase();
+      if (!nombreCompleto.includes(busquedaLower) && !dni.includes(busquedaLower)) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
+
+  // Función para exportar a Excel
+  const exportarAExcel = () => {
+    const datos = asistenciasFiltradas.map((asistencia) => {
+      const horasTrabajadas = calcularHorasTrabajadas(asistencia.checkIn, asistencia.checkOut);
+      return {
+        'Empleado': `${asistencia.empleado.nombre} ${asistencia.empleado.apellido}`,
+        'DNI': asistencia.empleado.dni,
+        'Empresa': asistencia.empleado.empresa.nombre,
+        'Check In': formatDateTime(asistencia.checkIn),
+        'Check Out': asistencia.checkOut ? formatDateTime(asistencia.checkOut) : '-',
+        'Horas Trabajadas': asistencia.checkOut ? formatearHoras(horasTrabajadas) : '-',
+        'Observaciones': asistencia.observaciones || '-',
+      };
+    });
+
+    // Crear CSV
+    const headers = Object.keys(datos[0] || {});
+    const csvContent = [
+      headers.join(','),
+      ...datos.map(row => headers.map(header => `"${row[header as keyof typeof row]}"`).join(','))
+    ].join('\n');
+
+    // Descargar archivo
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `asistencias_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Obtener empresas únicas de los empleados
+  const empresasUnicas = Array.from(new Set(empleados.map(e => e.empresa.id)))
+    .map(id => empleados.find(e => e.empresa.id === id)?.empresa)
+    .filter(Boolean) as { id: string; nombre: string }[];
+
+  const limpiarFiltros = () => {
+    setFiltros({
+      empleadoId: '',
+      empresaId: '',
+      fechaInicio: '',
+      fechaFin: '',
+      busqueda: '',
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -192,17 +323,165 @@ export default function AsistenciasPage() {
           <h1 className="text-3xl font-bold text-gray-900">Asistencias</h1>
           <p className="mt-2 text-gray-600">Registra y gestiona las asistencias</p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          disabled={empleados.length === 0}
-          className="bg-primary-600 text-white hover:bg-primary-700 px-6 py-3 rounded-lg font-semibold flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-          Registrar Asistencia
-        </button>
+        <div className="flex gap-3">
+          {/* Botón de Columnas */}
+          <div className="relative">
+            <button
+              onClick={() => setShowColumnMenu(!showColumnMenu)}
+              className="bg-gray-600 text-white hover:bg-gray-700 px-6 py-3 rounded-lg font-semibold flex items-center"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+              </svg>
+              Columnas
+            </button>
+
+            {showColumnMenu && (
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                <div className="p-2">
+                  <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase">Mostrar Columnas</div>
+                  {[
+                    { key: 'empleado', label: 'Empleado' },
+                    { key: 'checkIn', label: 'Entrada' },
+                    { key: 'checkOut', label: 'Salida' },
+                    { key: 'horas', label: 'Horas' },
+                    { key: 'empresa', label: 'Empresa' },
+                    { key: 'estadoOdoo', label: 'Estado Odoo' },
+                    { key: 'creado', label: 'Creado' },
+                    { key: 'editado', label: 'Última Edición' },
+                  ].map((col) => (
+                    <label
+                      key={col.key}
+                      className="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={columnasVisibles[col.key as keyof typeof columnasVisibles]}
+                        onChange={(e) => setColumnasVisibles({
+                          ...columnasVisibles,
+                          [col.key]: e.target.checked
+                        })}
+                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">{col.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={exportarAExcel}
+            disabled={asistenciasFiltradas.length === 0}
+            className="bg-green-600 text-white hover:bg-green-700 px-6 py-3 rounded-lg font-semibold flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Exportar Excel
+          </button>
+          <button
+            onClick={() => setShowModal(true)}
+            disabled={empleados.length === 0}
+            className="bg-primary-600 text-white hover:bg-primary-700 px-6 py-3 rounded-lg font-semibold flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Registrar Asistencia
+          </button>
+        </div>
       </div>
+
+      {/* Filtros */}
+      {empleados.length > 0 && (
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Filtros de Búsqueda</h3>
+            <button
+              onClick={limpiarFiltros}
+              className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+            >
+              Limpiar filtros
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Búsqueda
+              </label>
+              <input
+                type="text"
+                placeholder="Nombre o DNI..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 bg-white"
+                value={filtros.busqueda}
+                onChange={(e) => setFiltros({ ...filtros, busqueda: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Empleado
+              </label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 bg-white"
+                value={filtros.empleadoId}
+                onChange={(e) => setFiltros({ ...filtros, empleadoId: e.target.value })}
+              >
+                <option value="">Todos los empleados</option>
+                {empleados.map((empleado) => (
+                  <option key={empleado.id} value={empleado.id}>
+                    {empleado.nombre} {empleado.apellido}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Empresa
+              </label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 bg-white"
+                value={filtros.empresaId}
+                onChange={(e) => setFiltros({ ...filtros, empresaId: e.target.value })}
+              >
+                <option value="">Todas las empresas</option>
+                {empresasUnicas.map((empresa) => (
+                  <option key={empresa.id} value={empresa.id}>
+                    {empresa.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Desde
+              </label>
+              <input
+                type="date"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 bg-white"
+                value={filtros.fechaInicio}
+                onChange={(e) => setFiltros({ ...filtros, fechaInicio: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Hasta
+              </label>
+              <input
+                type="date"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 bg-white"
+                value={filtros.fechaFin}
+                onChange={(e) => setFiltros({ ...filtros, fechaFin: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="mt-4 text-sm text-gray-600">
+            Mostrando <span className="font-semibold text-gray-900">{asistenciasFiltradas.length}</span> de{' '}
+            <span className="font-semibold text-gray-900">{asistencias.length}</span> asistencias
+          </div>
+        </div>
+      )}
 
       {empleados.length === 0 ? (
         <div className="bg-white rounded-lg shadow p-12 text-center">
@@ -212,7 +491,7 @@ export default function AsistenciasPage() {
           <h3 className="text-lg font-medium text-gray-900 mb-2">Primero crea empleados</h3>
           <p className="text-gray-600">Necesitas tener empleados registrados para crear asistencias</p>
         </div>
-      ) : asistencias.length === 0 ? (
+      ) : asistenciasFiltradas.length === 0 ? (
         <div className="bg-white rounded-lg shadow p-12 text-center">
           <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
@@ -231,28 +510,56 @@ export default function AsistenciasPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Empleado
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Check In
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Check Out
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Empresa
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Estado Odoo
-                </th>
+                {columnasVisibles.empleado && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Empleado
+                  </th>
+                )}
+                {columnasVisibles.checkIn && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Entrada
+                  </th>
+                )}
+                {columnasVisibles.checkOut && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Salida
+                  </th>
+                )}
+                {columnasVisibles.horas && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Horas
+                  </th>
+                )}
+                {columnasVisibles.empresa && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Empresa
+                  </th>
+                )}
+                {columnasVisibles.estadoOdoo && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Estado Odoo
+                  </th>
+                )}
+                {columnasVisibles.creado && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Creado
+                  </th>
+                )}
+                {columnasVisibles.editado && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Última Edición
+                  </th>
+                )}
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {asistencias.map((asistencia) => (
+              {asistenciasFiltradas.map((asistencia) => {
+                const horasTrabajadas = calcularHorasTrabajadas(asistencia.checkIn, asistencia.checkOut);
+                
+                return (
                 <tr key={asistencia.id} className={asistencia.odooError ? "hover:bg-red-50 bg-red-50" : "hover:bg-gray-50"}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
@@ -265,6 +572,9 @@ export default function AsistenciasPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {asistencia.checkOut ? formatDateTime(asistencia.checkOut) : '-'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-600">
+                    {asistencia.checkOut ? formatearHoras(horasTrabajadas) : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {asistencia.empleado.empresa.nombre}
@@ -292,6 +602,17 @@ export default function AsistenciasPage() {
                       <span className="text-gray-400">-</span>
                     )}
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <div className="text-xs">{formatDateTime(asistencia.createdAt)}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <div className="text-xs">
+                      {asistencia.createdAt !== asistencia.updatedAt 
+                        ? formatDateTime(asistencia.updatedAt)
+                        : '-'
+                      }
+                    </div>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
                     <button
                       onClick={() => handleViewDetails(asistencia)}
@@ -313,7 +634,21 @@ export default function AsistenciasPage() {
                     </button>
                   </td>
                 </tr>
-              ))}
+              );
+              })}
+              <tr className="bg-gray-100 font-bold">
+                <td className="px-6 py-4 text-sm text-gray-900" colSpan={3}>
+                  TOTAL HORAS
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-blue-600">
+                  {formatearHoras(
+                    asistenciasFiltradas.reduce((total, asistencia) => 
+                      total + calcularHorasTrabajadas(asistencia.checkIn, asistencia.checkOut), 0
+                    )
+                  )}
+                </td>
+                <td colSpan={3}></td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -360,7 +695,7 @@ export default function AsistenciasPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Check In *
+                  Entrada *
                 </label>
                 <input
                   type="datetime-local"
@@ -372,7 +707,7 @@ export default function AsistenciasPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Check Out
+                  Salida
                 </label>
                 <input
                   type="datetime-local"
@@ -545,6 +880,23 @@ export default function AsistenciasPage() {
                           <li>Asegúrate de que la integración esté activa</li>
                         </ul>
                       </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Información de Auditoría */}
+              <div className="border-t pt-4">
+                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">Auditoría</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Creado el:</span>
+                    <span className="font-medium text-gray-900">{formatDateTime(selectedAsistencia.createdAt)}</span>
+                  </div>
+                  {selectedAsistencia.createdAt !== selectedAsistencia.updatedAt && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Última modificación:</span>
+                      <span className="font-medium text-gray-900">{formatDateTime(selectedAsistencia.updatedAt)}</span>
                     </div>
                   )}
                 </div>

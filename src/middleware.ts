@@ -7,7 +7,6 @@ const SECRET_KEY = new TextEncoder().encode(process.env.JWT_SECRET || 'tu-secret
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  console.log('🛡️ Middleware ejecutándose para:', path);
 
   // Rutas públicas que no requieren autenticación
   const isPublicPath = path === '/' || 
@@ -66,12 +65,8 @@ export async function middleware(request: NextRequest) {
 
   // Verificar el token en las rutas protegidas
   const token = request.cookies.get('token')?.value || '';
-  console.log('🍪 Todas las cookies:', request.cookies.getAll());
-  console.log('🍪 Token encontrado:', token ? `Sí (${token.substring(0, 20)}...)` : 'No');
-
   // Si no hay token, redirigir al login
   if (!token) {
-    console.log('❌ No hay token, redirigiendo a login desde:', path);
     if (path.startsWith('/api/')) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
@@ -80,10 +75,8 @@ export async function middleware(request: NextRequest) {
 
   // Verificar si el token es válido
   const payload = await verifyToken(token);
-  console.log('🔐 Token válido:', payload ? `Sí (user: ${payload.email})` : 'No');
   
   if (!payload) {
-    console.log('❌ Token inválido, redirigiendo a login y eliminando cookie');
     const response = path.startsWith('/api/') 
       ? NextResponse.json({ error: 'Token inválido' }, { status: 401 })
       : NextResponse.redirect(new URL('/login', request.url));
@@ -91,7 +84,7 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  console.log('✅ Acceso permitido al dashboard para:', payload.email);
+  
   // Si todo está bien, continuar
   return NextResponse.next();
 }

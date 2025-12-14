@@ -24,13 +24,8 @@ export async function signToken(payload: TokenPayload): Promise<string> {
 }
 
 export async function verifyToken(token: string): Promise<TokenPayload | null> {
-  try {
-    console.log('🔍 Verificando token...');
-    console.log('📝 Token (primeros 20 chars):', token.substring(0, 20));
-    
+  try {    
     const { payload } = await jwtVerify(token, JWT_SECRET);
-    console.log('✅ Token decodificado exitosamente:', { userId: payload.userId, email: payload.email });
-    
     return payload as unknown as TokenPayload;
   } catch (error) {
     console.error('❌ Error al verificar token:', error instanceof Error ? error.message : error);
