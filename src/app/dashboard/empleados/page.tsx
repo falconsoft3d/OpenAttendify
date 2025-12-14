@@ -55,6 +55,46 @@ export default function EmpleadosPage() {
     loadData();
   }, []);
 
+  // Función para obtener el siguiente código de empleado
+  const obtenerSiguienteCodigo = async (empresaId: string) => {
+    try {
+      const response = await fetch(`/api/empleados/next-codigo?empresaId=${empresaId}`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.codigo;
+      }
+      return '';
+    } catch (error) {
+      console.error('Error obteniendo siguiente código:', error);
+      return '';
+    }
+  };
+
+  // Función para abrir modal de nuevo empleado
+  const abrirModalNuevoEmpleado = async () => {
+    // Si hay empresas, obtener el código para la primera empresa
+    if (empresas.length > 0) {
+      const codigo = await obtenerSiguienteCodigo(empresas[0].id);
+      setFormData({
+        codigo,
+        nombre: '',
+        apellido: '',
+        dni: '',
+        email: '',
+        telefono: '',
+        cargo: '',
+        empresaId: empresas[0].id,
+        password: '',
+        avatarUrl: '',
+      });
+    }
+    setEditingId(null);
+    setPasswordGenerated(false);
+    setShowPassword(false);
+    setAvatarPreview(null);
+    setShowModal(true);
+  };
+
   // Función para generar contraseña aleatoria
   const generatePassword = () => {
     const length = 10;
@@ -115,6 +155,38 @@ export default function EmpleadosPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validaciones del lado del cliente
+    if (formData.nombre.length < 2) {
+      alert('El nombre debe tener al menos 2 caracteres');
+      return;
+    }
+    
+    if (formData.apellido.length < 2) {
+      alert('El apellido debe tener al menos 2 caracteres');
+      return;
+    }
+    
+    if (formData.dni.length < 8) {
+      alert('El DNI debe tener al menos 8 caracteres');
+      return;
+    }
+    
+    if (!editingId && (!formData.password || formData.password.length < 6)) {
+      alert('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+    
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      alert('El email no es válido');
+      return;
+    }
+    
+    if (!formData.empresaId) {
+      alert('Debe seleccionar una empresa');
+      return;
+    }
+    
     try {
       const url = editingId ? `/api/empleados/${editingId}` : '/api/empleados';
       const method = editingId ? 'PUT' : 'POST';
@@ -157,7 +229,13 @@ export default function EmpleadosPage() {
         loadData();
       } else {
         const error = await response.json();
-        alert(error.error || 'Error al guardar empleado');
+        // Mostrar detalles del error de validación
+        if (error.details && error.details.length > 0) {
+          const errores = error.details.map((d: any) => `${d.campo}: ${d.mensaje}`).join('\n');
+          alert(`${error.error}\n\n${errores}`);
+        } else {
+          alert(error.error || 'Error al guardar empleado');
+        }
       }
     } catch (error) {
       console.error('Error guardando empleado:', error);
@@ -336,7 +414,7 @@ export default function EmpleadosPage() {
             href="/empleado/login"
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-blue-600 text-white hover:bg-blue-700 px-6 py-3 rounded-lg font-semibold flex items-center"
+            className="bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-blue-600 px-6 py-3 rounded-lg font-semibold flex items-center"
           >
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -344,7 +422,7 @@ export default function EmpleadosPage() {
             Portal Empleado
           </a>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={abrirModalNuevoEmpleado}
             disabled={empresas.length === 0}
             className="bg-primary-600 text-white hover:bg-primary-700 px-6 py-3 rounded-lg font-semibold flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -435,7 +513,7 @@ export default function EmpleadosPage() {
           <h3 className="text-lg font-medium text-gray-900 mb-2">No hay empleados registrados</h3>
           <p className="text-gray-600 mb-4">Comienza agregando tu primer empleado</p>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={abrirModalNuevoEmpleado}
             className="bg-primary-600 text-white hover:bg-primary-700 px-6 py-2 rounded-lg font-semibold"
           >
             Crear Empleado
@@ -491,14 +569,12 @@ export default function EmpleadosPage() {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-mono font-semibold text-blue-600">
-                      {empleado.codigo}
-                    </div>
                     <button
                       onClick={() => copyEmpleadoCodigo(empleado.codigo)}
-                      className="text-xs text-gray-500 hover:text-blue-600"
+                      className="text-sm font-mono font-semibold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                      title="Clic para copiar"
                     >
-                      Copiar código
+                      {empleado.codigo}
                     </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -729,13 +805,16 @@ export default function EmpleadosPage() {
                 <input
                   type="text"
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 bg-white font-mono"
+                  readOnly={!editingId}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 bg-gray-50 font-mono"
                   value={formData.codigo}
                   onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
-                  placeholder="Ej: 10001"
+                  placeholder="Se generará automáticamente"
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  Código único para acceso al portal móvil
+                  {editingId 
+                    ? "Código único para acceso al portal móvil" 
+                    : "Código generado automáticamente según la empresa"}
                 </p>
               </div>
               <div>
@@ -745,6 +824,7 @@ export default function EmpleadosPage() {
                 <input
                   type="text"
                   required
+                  minLength={2}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 bg-white"
                   value={formData.nombre}
                   onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
@@ -757,6 +837,7 @@ export default function EmpleadosPage() {
                 <input
                   type="text"
                   required
+                  minLength={2}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 bg-white"
                   value={formData.apellido}
                   onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
@@ -769,6 +850,7 @@ export default function EmpleadosPage() {
                 <input
                   type="text"
                   required
+                  minLength={8}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 bg-white"
                   value={formData.dni}
                   onChange={(e) => setFormData({ ...formData, dni: e.target.value })}
@@ -812,6 +894,7 @@ export default function EmpleadosPage() {
                       <input
                         type={showPassword ? 'text' : 'password'}
                         required={!editingId}
+                        minLength={6}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 bg-white pr-10"
                         value={formData.password}
                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -887,7 +970,16 @@ export default function EmpleadosPage() {
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 bg-white"
                   value={formData.empresaId}
-                  onChange={(e) => setFormData({ ...formData, empresaId: e.target.value })}
+                  onChange={async (e) => {
+                    const nuevaEmpresaId = e.target.value;
+                    // Si no estamos editando y hay una empresa seleccionada, obtener el nuevo código
+                    if (!editingId && nuevaEmpresaId) {
+                      const codigo = await obtenerSiguienteCodigo(nuevaEmpresaId);
+                      setFormData({ ...formData, empresaId: nuevaEmpresaId, codigo });
+                    } else {
+                      setFormData({ ...formData, empresaId: nuevaEmpresaId });
+                    }
+                  }}
                 >
                   <option value="">Selecciona una empresa</option>
                   {empresas.map((empresa) => (

@@ -17,21 +17,37 @@ const empleadoSchema = z.object({
 });
 
 // Función para generar el siguiente código de empleado
-async function generateEmpleadoCodigo(empresaId: string): Promise<string> {
+async function generateEmpleadoCodigo(empresaId: string, usuarioId: string): Promise<string> {
+  // Obtener todas las empresas del usuario ordenadas por fecha de creación
+  // para asignar un número secuencial a cada empresa
+  const empresas = await prisma.empresa.findMany({
+    where: { usuarioId },
+    orderBy: { createdAt: 'asc' }
+  });
+
+  // Encontrar el índice de esta empresa (empezando desde 01)
+  const empresaNumero = empresas.findIndex(e => e.id === empresaId) + 1;
+  const empresaPrefix = empresaNumero.toString().padStart(2, '0');
+
   // Buscar el último empleado de la empresa
   const ultimoEmpleado = await prisma.empleado.findFirst({
     where: { empresaId },
-    orderBy: { codigo: 'desc' },
+    orderBy: { createdAt: 'desc' },
   });
 
-  if (!ultimoEmpleado) {
-    return '10001'; // Primer empleado de la empresa
+  let numeroEmpleado = 1;
+  
+  if (ultimoEmpleado && ultimoEmpleado.codigo) {
+    // Extraer el número del código anterior (últimos 5 dígitos)
+    const match = ultimoEmpleado.codigo.match(/(\d{5})$/);
+    if (match) {
+      numeroEmpleado = parseInt(match[1]) + 1;
+    }
   }
 
-  // Incrementar el código
-  const ultimoCodigo = parseInt(ultimoEmpleado.codigo);
-  const nuevoCodigo = ultimoCodigo + 1;
-  return nuevoCodigo.toString();
+  const numeroEmpleadoStr = numeroEmpleado.toString().padStart(5, '0');
+  
+  return `${empresaPrefix}${numeroEmpleadoStr}`; // Ejemplo: 0100001
 }
 
 export async function GET(request: NextRequest) {
@@ -101,8 +117,28 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const validatedData = empleadoSchema.parse(body);
-
+    
+    // Validar datos
+    let validatedData;
+    try {
+      validatedData = empleadoSchema.parse(body);
+    } catch (validationError) {
+      if (validationError instanceof z.ZodError) {
+        console.error('❌ Error de validación:', validationError.errors);
+        return NextResponse.json(
+          { 
+            error: 'Datos inválidos', 
+            details: validationError.errors.map(err => ({
+              campo: err.path.join('.'),
+              mensaje: err.message
+            }))
+          },
+          { status: 400 }
+        );
+      }
+      throw validationError;
+    }
+    
     // Verificar que la empresa pertenece al usuario
     const empresa = await prisma.empresa.findFirst({
       where: {
@@ -131,7 +167,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generar código de empleado
-    const codigo = await generateEmpleadoCodigo(validatedData.empresaId);
+    const codigo = await generateEmpleadoCodigo(validatedData.empresaId, payload.userId);
 
     // Hashear la contraseña (ahora es requerida)
     const hashedPassword = await bcrypt.hash(validatedData.password, 10);
@@ -164,14 +200,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(empleadoSinPassword, { status: 201 });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Datos inválidos', details: error.errors },
-        { status: 400 }
-      );
-    }
-
-    console.error('Error creando empleado:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }

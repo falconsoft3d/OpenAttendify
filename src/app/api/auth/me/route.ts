@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('✅ /api/auth/me - Token válido para:', payload.email);
+    console.log('✅ /api/auth/me - ', payload.email);
 
     // Obtener información actualizada del usuario
     const usuario = await prisma.usuario.findUnique({

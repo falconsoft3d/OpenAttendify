@@ -376,7 +376,7 @@ export default function AsistenciasPage() {
                     { key: 'checkOut', label: 'Salida' },
                     { key: 'horas', label: 'Horas' },
                     { key: 'empresa', label: 'Empresa' },
-                    { key: 'estadoOdoo', label: 'Estado Odoo' },
+                    { key: 'estadoOdoo', label: 'Estado' },
                     { key: 'creado', label: 'Creado' },
                     { key: 'editado', label: 'Última Edición' },
                   ].map((col) => (
@@ -567,7 +567,7 @@ export default function AsistenciasPage() {
                 )}
                 {columnasVisibles.estadoOdoo && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Estado Odoo
+                    Estado
                   </th>
                 )}
                 {columnasVisibles.creado && (
@@ -590,7 +590,7 @@ export default function AsistenciasPage() {
                 const horasTrabajadas = calcularHorasTrabajadas(asistencia.checkIn, asistencia.checkOut);
                 
                 return (
-                <tr key={asistencia.id} className={asistencia.odooError ? "hover:bg-red-50 bg-red-50" : "hover:bg-gray-50"}>
+                <tr key={asistencia.id} className="hover:bg-gray-50">
                   {columnasVisibles.empleado && (
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
