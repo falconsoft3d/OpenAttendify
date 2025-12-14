@@ -73,7 +73,6 @@ X-API-Key: oatt_tu-api-key
 ```json
 {
   "success": true,
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "empleado": {
     "id": "clx123abc",
     "codigo": "10001",
@@ -124,8 +123,6 @@ const response = await fetch('https://tu-dominio.com/api/auth/external/empleado'
 const data = await response.json();
 
 if (data.success) {
-  // Guardar el token para futuras peticiones
-  const token = data.token;
   const empleado = data.empleado;
   console.log('Login exitoso:', empleado);
 }
@@ -347,7 +344,6 @@ const loginResponse = await fetch('https://tu-dominio.com/api/auth/external/empl
 
 const loginData = await loginResponse.json();
 const empleadoId = loginData.empleado.id;
-const token = loginData.token; // Guardar para futuras peticiones si lo necesitas
 ```
 
 **2. Registrar entrada:**
@@ -433,7 +429,6 @@ console.log('Asistencias del mes:', asistencias);
 2. **Login de Empleados:**
    - El login externo debe estar explícitamente activado en el panel de integraciones
    - Los empleados deben tener contraseña configurada
-   - Los tokens JWT expiran después de 7 días
 
 3. **HTTPS:**
    - Siempre usa HTTPS en producción
