@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/prisma';
-
-const SECRET_KEY = new TextEncoder().encode(process.env.JWT_SECRET || 'tu-secret-key-super-segura');
+import { JWT_SECRET } from '@/lib/jwt';
 
 // Listar API Keys del usuario
 export async function GET(request: NextRequest) {
@@ -16,7 +15,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { payload } = await jwtVerify(token, SECRET_KEY);
+    const { payload } = await jwtVerify(token, JWT_SECRET);
     const usuarioId = payload.userId as string;
 
     const apiKeys = await prisma.apiKey.findMany({

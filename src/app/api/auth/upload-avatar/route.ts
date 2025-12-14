@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/prisma';
-
-const SECRET_KEY = new TextEncoder().encode(process.env.JWT_SECRET || 'secret');
+import { JWT_SECRET } from '@/lib/jwt';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     let payload;
     try {
-      const { payload: decoded } = await jwtVerify(token, SECRET_KEY);
+      const { payload: decoded } = await jwtVerify(token, JWT_SECRET);
       payload = decoded;
     } catch (error) {
       return NextResponse.json(

@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/prisma';
+import { JWT_SECRET } from '@/lib/jwt';
 
 export const dynamic = 'force-dynamic';
-
-const SECRET_KEY = new TextEncoder().encode(process.env.JWT_SECRET || 'tu-secret-key-super-segura');
 
 // Eliminar API Key
 export async function DELETE(
@@ -22,7 +21,7 @@ export async function DELETE(
       );
     }
 
-    const { payload } = await jwtVerify(token, SECRET_KEY);
+    const { payload } = await jwtVerify(token, JWT_SECRET);
     const usuarioId = payload.userId as string;
 
     // Verificar que la key pertenece al usuario
@@ -74,7 +73,7 @@ export async function PATCH(
       );
     }
 
-    const { payload } = await jwtVerify(token, SECRET_KEY);
+    const { payload } = await jwtVerify(token, JWT_SECRET);
     const usuarioId = payload.userId as string;
 
     const body = await request.json();

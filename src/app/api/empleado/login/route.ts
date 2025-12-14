@@ -2,14 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { SignJWT } from 'jose';
-
-const SECRET_KEY = new TextEncoder().encode(process.env.JWT_SECRET || 'tu-secret-key-super-segura');
+import { JWT_SECRET } from '@/lib/jwt';
 
 async function createEmpleadoToken(empleadoId: string, codigo: string): Promise<string> {
   const token = await new SignJWT({ empleadoId, codigo, type: 'empleado' })
     .setProtectedHeader({ alg: 'HS256' })
     .setExpirationTime('7d')
-    .sign(SECRET_KEY);
+    .sign(JWT_SECRET);
   
   return token;
 }

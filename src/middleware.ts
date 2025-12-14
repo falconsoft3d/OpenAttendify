@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { verifyToken } from '@/lib/jwt';
+import { verifyToken, JWT_SECRET } from '@/lib/jwt';
 import { jwtVerify } from 'jose';
-
-const SECRET_KEY = new TextEncoder().encode(process.env.JWT_SECRET || 'tu-secret-key-super-segura');
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
@@ -44,7 +42,7 @@ export async function middleware(request: NextRequest) {
     }
 
     try {
-      const { payload } = await jwtVerify(empleadoToken, SECRET_KEY);
+      const { payload } = await jwtVerify(empleadoToken, JWT_SECRET);
       
       if (payload.type !== 'empleado') {
         throw new Error('Token inválido');
