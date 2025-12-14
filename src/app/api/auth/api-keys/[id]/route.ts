@@ -2,14 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 const SECRET_KEY = new TextEncoder().encode(process.env.JWT_SECRET || 'tu-secret-key-super-segura');
 
 // Eliminar API Key
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const token = request.cookies.get('token')?.value;
 
     if (!token) {
@@ -25,7 +28,7 @@ export async function DELETE(
     // Verificar que la key pertenece al usuario
     const apiKey = await prisma.apiKey.findFirst({
       where: {
-        id: params.id,
+        id: id,
         usuarioId,
       },
     });
@@ -39,7 +42,7 @@ export async function DELETE(
 
     // Eliminar la key
     await prisma.apiKey.delete({
-      where: { id: params.id },
+      where: { id: id },
     });
 
     return NextResponse.json(
@@ -58,9 +61,10 @@ export async function DELETE(
 // Actualizar API Key (activar/desactivar)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const token = request.cookies.get('token')?.value;
 
     if (!token) {
@@ -78,7 +82,7 @@ export async function PATCH(
     // Verificar que la key pertenece al usuario
     const apiKey = await prisma.apiKey.findFirst({
       where: {
-        id: params.id,
+        id: id,
         usuarioId,
       },
     });
@@ -92,7 +96,7 @@ export async function PATCH(
 
     // Actualizar la key
     const updated = await prisma.apiKey.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         activa: body.activa,
         nombre: body.nombre,

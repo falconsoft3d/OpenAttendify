@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/jwt';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const token = request.cookies.get('token')?.value;
     if (!token) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
@@ -20,7 +23,7 @@ export async function PUT(
     // Verificar que la integración pertenece al usuario
     const integracion = await prisma.integracion.findFirst({
       where: {
-        id: params.id,
+        id: id,
         usuarioId: payload.userId,
       },
     });
@@ -36,7 +39,7 @@ export async function PUT(
     const { activo, configuracion } = body;
 
     const updated = await prisma.integracion.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         activo: activo ?? integracion.activo,
         configuracion: configuracion ?? integracion.configuracion,
@@ -55,9 +58,10 @@ export async function PUT(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const token = request.cookies.get('token')?.value;
     if (!token) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
@@ -71,7 +75,7 @@ export async function PATCH(
     // Verificar que la integración pertenece al usuario
     const integracion = await prisma.integracion.findFirst({
       where: {
-        id: params.id,
+        id: id,
         usuarioId: payload.userId,
       },
     });
@@ -87,7 +91,7 @@ export async function PATCH(
     const { activo } = body;
 
     const updated = await prisma.integracion.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         activo: activo ?? integracion.activo,
       },
@@ -105,9 +109,10 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const token = request.cookies.get('token')?.value;
     if (!token) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
@@ -121,7 +126,7 @@ export async function DELETE(
     // Verificar que la integración pertenece al usuario
     const integracion = await prisma.integracion.findFirst({
       where: {
-        id: params.id,
+        id: id,
         usuarioId: payload.userId,
       },
     });
@@ -134,7 +139,7 @@ export async function DELETE(
     }
 
     await prisma.integracion.delete({
-      where: { id: params.id },
+      where: { id: id },
     });
 
     return NextResponse.json(
