@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { SignJWT } from 'jose';
 import { prisma } from '@/lib/prisma';
-
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'tu-secreto-super-seguro-cambialo-en-produccion'
-);
 
 export async function POST(request: NextRequest) {
   try {
@@ -115,20 +110,8 @@ export async function POST(request: NextRequest) {
       data: { ultimoUso: new Date() }
     });
 
-    // Generar token JWT para el empleado
-    const token = await new SignJWT({
-      empleadoId: empleado.id,
-      codigo: empleado.codigo,
-      empresaId: empleado.empresa.id,
-      type: 'empleado'
-    })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setExpirationTime('7d')
-      .sign(JWT_SECRET);
-
     return NextResponse.json({
       success: true,
-      token,
       empleado: {
         id: empleado.id,
         codigo: empleado.codigo,
