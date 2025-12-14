@@ -62,7 +62,7 @@ NEXTAUTH_SECRET="otra-clave-secreta-para-nextauth"
 4. **Crear la base de datos en PostgreSQL**
 
 ```bash
-# Conéctate a PostgreSQL
+# Conéctate a PostgreSQL 1
 psql -U postgres
 
 # Crea la base de datos
