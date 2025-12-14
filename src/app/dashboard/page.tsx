@@ -298,7 +298,7 @@ export default function DashboardPage() {
           <h3 className="font-semibold mb-2">Error al cargar estadísticas</h3>
           <p>{error}</p>
           <button
-            onClick={loadStats}
+            onClick={loadData}
             className="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
           >
             Reintentar

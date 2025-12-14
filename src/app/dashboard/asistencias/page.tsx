@@ -67,6 +67,23 @@ export default function AsistenciasPage() {
     loadData();
   }, []);
 
+  // Cerrar el menú de columnas al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showColumnMenu) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.relative')) {
+          setShowColumnMenu(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showColumnMenu]);
+
   const loadData = async () => {
     try {
       const [asistenciasRes, empleadosRes] = await Promise.all([
@@ -561,25 +578,36 @@ export default function AsistenciasPage() {
                 
                 return (
                 <tr key={asistencia.id} className={asistencia.odooError ? "hover:bg-red-50 bg-red-50" : "hover:bg-gray-50"}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {asistencia.empleado.nombre} {asistencia.empleado.apellido}
-                    </div>
-                    <div className="text-sm text-gray-500">{asistencia.empleado.dni}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDateTime(asistencia.checkIn)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {asistencia.checkOut ? formatDateTime(asistencia.checkOut) : '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-600">
-                    {asistencia.checkOut ? formatearHoras(horasTrabajadas) : '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {asistencia.empleado.empresa.nombre}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  {columnasVisibles.empleado && (
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {asistencia.empleado.nombre} {asistencia.empleado.apellido}
+                      </div>
+                      <div className="text-sm text-gray-500">{asistencia.empleado.dni}</div>
+                    </td>
+                  )}
+                  {columnasVisibles.checkIn && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formatDateTime(asistencia.checkIn)}
+                    </td>
+                  )}
+                  {columnasVisibles.checkOut && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {asistencia.checkOut ? formatDateTime(asistencia.checkOut) : '-'}
+                    </td>
+                  )}
+                  {columnasVisibles.horas && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-600">
+                      {asistencia.checkOut ? formatearHoras(horasTrabajadas) : '-'}
+                    </td>
+                  )}
+                  {columnasVisibles.empresa && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {asistencia.empleado.empresa.nombre}
+                    </td>
+                  )}
+                  {columnasVisibles.estadoOdoo && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
                     {asistencia.odooError ? (
                       <div className="flex items-center text-red-600">
                         <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -602,17 +630,22 @@ export default function AsistenciasPage() {
                       <span className="text-gray-400">-</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <div className="text-xs">{formatDateTime(asistencia.createdAt)}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <div className="text-xs">
-                      {asistencia.createdAt !== asistencia.updatedAt 
-                        ? formatDateTime(asistencia.updatedAt)
-                        : '-'
-                      }
-                    </div>
-                  </td>
+                  )}
+                  {columnasVisibles.creado && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <div className="text-xs">{formatDateTime(asistencia.createdAt)}</div>
+                    </td>
+                  )}
+                  {columnasVisibles.editado && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <div className="text-xs">
+                        {asistencia.createdAt !== asistencia.updatedAt 
+                          ? formatDateTime(asistencia.updatedAt)
+                          : '-'
+                        }
+                      </div>
+                    </td>
+                  )}
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
                     <button
                       onClick={() => handleViewDetails(asistencia)}
