@@ -23,7 +23,6 @@ export async function middleware(request: NextRequest) {
 
   // Si es una ruta pública, permitir acceso
   if (isPublicPath || isEmpleadoPublicPath) {
-    console.log('✅ Ruta pública, permitiendo acceso');
     return NextResponse.next();
   }
 
@@ -51,10 +50,10 @@ export async function middleware(request: NextRequest) {
         throw new Error('Token inválido');
       }
 
-      console.log('✅ Acceso permitido al portal de empleado:', payload.codigo);
+      
       return NextResponse.next();
     } catch (error) {
-      console.log('❌ Token de empleado inválido, redirigiendo a login');
+      
       const response = path.startsWith('/api/')
         ? NextResponse.json({ error: 'Token inválido' }, { status: 401 })
         : NextResponse.redirect(new URL('/empleado/login', request.url));

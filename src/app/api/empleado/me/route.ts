@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
         apellido: true,
         cargo: true,
         activo: true,
+        avatarUrl: true,
         empresa: {
           select: {
             id: true,

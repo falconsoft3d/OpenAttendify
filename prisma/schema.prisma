@@ -13,6 +13,7 @@ model Usuario {
   password  String
   nombre    String
   rol       Rol      @default(ADMIN)
+  avatarUrl String?  @db.Text
   loginEmpleadosExterno Boolean @default(false) // Permitir login de empleados desde apps externas
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -73,6 +74,7 @@ model Empleado {
   apellido      String
   dni           String      @unique
   password      String?     // Contraseña para el empleado
+  avatarUrl     String?     @db.Text // Avatar del empleado
   email         String?
   telefono      String?
   cargo         String?

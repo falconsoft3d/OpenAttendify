@@ -16,6 +16,7 @@ const empleadoSchema = z.object({
   telefono: z.string().optional(),
   cargo: z.string().optional(),
   empresaId: z.string(),
+  avatarUrl: z.string().optional().or(z.literal('')),
 });
 
 export async function PUT(
@@ -91,6 +92,7 @@ export async function PUT(
         email: true,
         telefono: true,
         cargo: true,
+        avatarUrl: true,
         fechaIngreso: true,
         activo: true,
         createdAt: true,

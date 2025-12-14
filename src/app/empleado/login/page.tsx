@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
@@ -9,9 +9,24 @@ export default function EmpleadoLoginPage() {
   const [formData, setFormData] = useState({
     codigo: '',
     password: '',
+    remember: false,
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Cargar credenciales guardadas al montar el componente
+  useEffect(() => {
+    const savedCodigo = localStorage.getItem('rememberedEmpleadoCodigo');
+    const savedPassword = localStorage.getItem('rememberedEmpleadoPassword');
+    
+    if (savedCodigo && savedPassword) {
+      setFormData({
+        codigo: savedCodigo,
+        password: savedPassword,
+        remember: true,
+      });
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +46,15 @@ export default function EmpleadoLoginPage() {
       const data = await response.json();
 
       if (response.ok) {
+        // Guardar o limpiar credenciales según opción "recordar"
+        if (formData.remember) {
+          localStorage.setItem('rememberedEmpleadoCodigo', formData.codigo);
+          localStorage.setItem('rememberedEmpleadoPassword', formData.password);
+        } else {
+          localStorage.removeItem('rememberedEmpleadoCodigo');
+          localStorage.removeItem('rememberedEmpleadoPassword');
+        }
+        
         router.push('/empleado');
       } else {
         setError(data.error || 'Error al iniciar sesión');
@@ -47,12 +71,17 @@ export default function EmpleadoLoginPage() {
       <div className="w-full max-w-md">
         {/* Logo/Header */}
         <div className="text-center mb-8">
-          <div className="bg-primary-600 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
+          <div className="flex justify-center mb-4">
+            <Image
+              src="/logo.png"
+              alt="OpenAttendify Logo"
+              width={120}
+              height={120}
+              className="rounded-2xl shadow-lg"
+              priority
+            />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Attendify</h1>
+          <h1 className="text-3xl font-bold text-gray-900">OpenAttendify</h1>
           <p className="text-gray-600 mt-2">Portal del Empleado</p>
         </div>
 
@@ -97,6 +126,19 @@ export default function EmpleadoLoginPage() {
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 disabled={loading}
               />
+            </div>
+
+            <div className="flex items-center">
+              <input
+                id="remember"
+                type="checkbox"
+                checked={formData.remember}
+                onChange={(e) => setFormData({ ...formData, remember: e.target.checked })}
+                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+              />
+              <label htmlFor="remember" className="ml-2 block text-sm text-gray-700">
+                Recordar mis datos
+              </label>
             </div>
 
             <button

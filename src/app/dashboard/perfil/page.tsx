@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface User {
@@ -8,12 +8,18 @@ interface User {
   email: string;
   nombre: string;
   rol: string;
+  avatarUrl?: string | null;
 }
 
 export default function PerfilPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Estado para subir avatar
+  const [uploading, setUploading] = useState(false);
+  const [avatarMessage, setAvatarMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Estado para cambiar contraseña
   const [passwordData, setPasswordData] = useState({
@@ -48,6 +54,102 @@ export default function PerfilPage() {
       router.push('/login');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de archivo
+    if (!file.type.startsWith('image/')) {
+      setAvatarMessage({ type: 'error', text: 'Por favor selecciona una imagen válida' });
+      return;
+    }
+
+    // Validar tamaño (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarMessage({ type: 'error', text: 'La imagen es muy grande. Máximo 5MB' });
+      return;
+    }
+
+    setUploading(true);
+    setAvatarMessage(null);
+
+    try {
+      // Convertir a base64
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64 = event.target?.result as string;
+
+        try {
+          const response = await fetch('/api/auth/upload-avatar', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ avatarUrl: base64 }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            setUser(data.user);
+            setAvatarMessage({ type: 'success', text: '¡Imagen actualizada correctamente!' });
+          } else {
+            const error = await response.json();
+            setAvatarMessage({ type: 'error', text: error.error || 'Error al actualizar imagen' });
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          setAvatarMessage({ type: 'error', text: 'Error al subir la imagen' });
+        } finally {
+          setUploading(false);
+        }
+      };
+
+      reader.onerror = () => {
+        setAvatarMessage({ type: 'error', text: 'Error al leer el archivo' });
+        setUploading(false);
+      };
+
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error:', error);
+      setAvatarMessage({ type: 'error', text: 'Error al procesar la imagen' });
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (!confirm('¿Estás seguro de que deseas eliminar tu imagen de perfil?')) {
+      return;
+    }
+
+    setUploading(true);
+    setAvatarMessage(null);
+
+    try {
+      const response = await fetch('/api/auth/upload-avatar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ avatarUrl: '' }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+        setAvatarMessage({ type: 'success', text: 'Imagen eliminada correctamente' });
+      } else {
+        const error = await response.json();
+        setAvatarMessage({ type: 'error', text: error.error || 'Error al eliminar imagen' });
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setAvatarMessage({ type: 'error', text: 'Error al eliminar la imagen' });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -160,6 +262,81 @@ export default function PerfilPage() {
       {/* Información del Usuario */}
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">Información Personal</h2>
+        
+        {/* Foto de Perfil */}
+        <div className="mb-6 pb-6 border-b">
+          <h3 className="text-lg font-medium text-gray-700 mb-4">Foto de Perfil</h3>
+          
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="flex-shrink-0">
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user.nombre}
+                  className="w-32 h-32 rounded-full object-cover border-4 border-primary-100"
+                />
+              ) : (
+                <div className="w-32 h-32 bg-primary-600 rounded-full flex items-center justify-center text-white text-4xl font-semibold border-4 border-primary-100">
+                  {user?.nombre?.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
+
+            <div className="flex-1">
+              <p className="text-gray-600 mb-4">
+                Sube una foto de perfil para personalizar tu cuenta. Se recomienda usar una imagen cuadrada de al menos 200x200 píxeles.
+              </p>
+              
+              {avatarMessage && (
+                <div
+                  className={`mb-4 p-3 rounded-lg text-sm ${
+                    avatarMessage.type === 'success'
+                      ? 'bg-green-50 text-green-800 border border-green-200'
+                      : 'bg-red-50 text-red-800 border border-red-200'
+                  }`}
+                >
+                  {avatarMessage.text}
+                </div>
+              )}
+              
+              <div className="flex flex-wrap gap-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="bg-primary-600 text-white hover:bg-primary-700 px-4 py-2 rounded-lg font-medium disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                >
+                  {uploading ? 'Subiendo...' : user?.avatarUrl ? 'Cambiar Foto' : 'Subir Foto'}
+                </button>
+
+                {user?.avatarUrl && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveAvatar}
+                    disabled={uploading}
+                    className="bg-red-600 text-white hover:bg-red-700 px-4 py-2 rounded-lg font-medium disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Eliminar Foto
+                  </button>
+                )}
+              </div>
+
+              <p className="text-sm text-gray-500 mt-2">
+                Tamaño máximo: 5MB. Formatos: JPG, PNG, GIF
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Datos del Usuario */}
         <div className="space-y-3">
           <div>
             <label className="text-sm font-medium text-gray-600">Nombre</label>

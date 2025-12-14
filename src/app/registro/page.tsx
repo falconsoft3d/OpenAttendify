@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function RegistroPage() {
   const [formData, setFormData] = useState({
@@ -9,6 +10,7 @@ export default function RegistroPage() {
     email: '',
     password: '',
     confirmPassword: '',
+    aceptaTerminos: false,
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,6 +24,11 @@ export default function RegistroPage() {
     setError('');
 
     // Validaciones
+    if (!formData.aceptaTerminos) {
+      setError('Debes aceptar los términos y condiciones');
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError('Las contraseñas no coinciden');
       return;
@@ -115,6 +122,16 @@ export default function RegistroPage() {
       <div className="flex-grow flex items-center justify-center px-4 py-12">
         <div className="max-w-md w-full">
           <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <Image
+                src="/logo.png"
+                alt="OpenAttendify Logo"
+                width={100}
+                height={100}
+                className="rounded-2xl shadow-lg"
+                priority
+              />
+            </div>
             <h2 className="text-3xl font-bold text-gray-900">Crear una cuenta</h2>
             <p className="mt-2 text-gray-600">Comienza a gestionar asistencias hoy</p>
           </div>
@@ -233,6 +250,29 @@ export default function RegistroPage() {
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
               />
+            </div>
+
+            <div className="flex items-start">
+              <div className="flex items-center h-5">
+                <input
+                  id="aceptaTerminos"
+                  type="checkbox"
+                  required
+                  checked={formData.aceptaTerminos}
+                  onChange={(e) => setFormData({ ...formData, aceptaTerminos: e.target.checked })}
+                  className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                />
+              </div>
+              <label htmlFor="aceptaTerminos" className="ml-3 text-sm text-gray-700">
+                He leído y acepto los{' '}
+                <Link
+                  href="/terminos"
+                  target="_blank"
+                  className="text-primary-600 hover:text-primary-700 font-medium underline"
+                >
+                  términos y condiciones
+                </Link>
+              </label>
             </div>
 
             <button

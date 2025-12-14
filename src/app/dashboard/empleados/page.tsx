@@ -17,6 +17,7 @@ interface Empleado {
   telefono: string | null;
   cargo: string | null;
   activo: boolean;
+  avatarUrl?: string | null;
   empresa: Empresa;
 }
 
@@ -36,9 +37,12 @@ export default function EmpleadosPage() {
     cargo: '',
     empresaId: '',
     password: '' as string | undefined,
+    avatarUrl: '' as string | undefined,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [passwordGenerated, setPasswordGenerated] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -114,6 +118,11 @@ export default function EmpleadosPage() {
         delete dataToSend.password;
       }
       
+      // Si avatarUrl está vacío, enviarlo como string vacío (el schema lo acepta)
+      if (!dataToSend.avatarUrl) {
+        dataToSend.avatarUrl = '';
+      }
+      
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -133,9 +142,11 @@ export default function EmpleadosPage() {
           cargo: '',
           empresaId: '',
           password: '',
+          avatarUrl: '',
         });
         setPasswordGenerated(false);
         setShowPassword(false);
+        setAvatarPreview(null);
         loadData();
       } else {
         const error = await response.json();
@@ -159,10 +170,58 @@ export default function EmpleadosPage() {
       cargo: empleado.cargo || '',
       empresaId: empleado.empresa.id,
       password: '', // No cargar la contraseña existente
+      avatarUrl: empleado.avatarUrl || '',
     });
+    setAvatarPreview(empleado.avatarUrl || null);
     setPasswordGenerated(false);
     setShowPassword(false);
     setShowModal(true);
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de archivo
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor selecciona una imagen válida');
+      return;
+    }
+
+    // Validar tamaño (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('La imagen es muy grande. Máximo 5MB');
+      return;
+    }
+
+    setUploadingAvatar(true);
+
+    try {
+      // Convertir a base64
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64 = event.target?.result as string;
+        setAvatarPreview(base64);
+        setFormData({ ...formData, avatarUrl: base64 } as any);
+        setUploadingAvatar(false);
+      };
+
+      reader.onerror = () => {
+        alert('Error al leer el archivo');
+        setUploadingAvatar(false);
+      };
+
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error al procesar la imagen');
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleRemoveAvatar = () => {
+    setAvatarPreview(null);
+    setFormData({ ...formData, avatarUrl: '' } as any);
   };
 
   const handleDelete = async (id: string) => {
@@ -212,16 +271,29 @@ export default function EmpleadosPage() {
           <h1 className="text-3xl font-bold text-gray-900">Empleados</h1>
           <p className="mt-2 text-gray-600">Gestiona los empleados registrados</p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          disabled={empresas.length === 0}
-          className="bg-primary-600 text-white hover:bg-primary-700 px-6 py-3 rounded-lg font-semibold flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-          Nuevo Empleado
-        </button>
+        <div className="flex gap-3">
+          <a
+            href="/empleado/login"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-blue-600 text-white hover:bg-blue-700 px-6 py-3 rounded-lg font-semibold flex items-center"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+            Portal Empleado
+          </a>
+          <button
+            onClick={() => setShowModal(true)}
+            disabled={empresas.length === 0}
+            className="bg-primary-600 text-white hover:bg-primary-700 px-6 py-3 rounded-lg font-semibold flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Nuevo Empleado
+          </button>
+        </div>
       </div>
 
       {empresas.length === 0 ? (
@@ -252,10 +324,13 @@ export default function EmpleadosPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Empleado
+                  Avatar
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Código
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Empleado
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   DNI
@@ -278,11 +353,18 @@ export default function EmpleadosPage() {
               {empleados.map((empleado) => (
                 <tr key={empleado.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {empleado.nombre} {empleado.apellido}
-                    </div>
-                    {empleado.email && (
-                      <div className="text-sm text-gray-500">{empleado.email}</div>
+                    {empleado.avatarUrl ? (
+                      <img
+                        src={empleado.avatarUrl}
+                        alt={`${empleado.nombre} ${empleado.apellido}`}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                        <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -295,6 +377,14 @@ export default function EmpleadosPage() {
                     >
                       Copiar código
                     </button>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">
+                      {empleado.nombre} {empleado.apellido}
+                    </div>
+                    {empleado.email && (
+                      <div className="text-sm text-gray-500">{empleado.email}</div>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {empleado.dni}
@@ -360,6 +450,7 @@ export default function EmpleadosPage() {
                     cargo: '',
                     empresaId: '',
                     password: '',
+                    avatarUrl: '',
                   });
                   setPasswordGenerated(false);
                   setShowPassword(false);
@@ -372,6 +463,57 @@ export default function EmpleadosPage() {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Foto de Perfil */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Foto de Perfil
+                </label>
+                <div className="flex items-center space-x-4">
+                  <div className="flex-shrink-0">
+                    {avatarPreview ? (
+                      <img
+                        src={avatarPreview}
+                        alt="Avatar"
+                        className="w-20 h-20 rounded-full object-cover border-2 border-gray-300"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center">
+                        <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="hidden"
+                      id="avatar-upload"
+                    />
+                    <label
+                      htmlFor="avatar-upload"
+                      className="cursor-pointer inline-block bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium text-sm"
+                    >
+                      {uploadingAvatar ? 'Subiendo...' : avatarPreview ? 'Cambiar Foto' : 'Subir Foto'}
+                    </label>
+                    {avatarPreview && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveAvatar}
+                        className="ml-2 text-red-600 hover:text-red-800 text-sm font-medium"
+                      >
+                        Eliminar
+                      </button>
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">
+                      Máximo 5MB. JPG, PNG, GIF
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Código de Empleado *

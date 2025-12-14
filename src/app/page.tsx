@@ -166,10 +166,20 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-gray-400">
-            © 2025 OpenAttendify. Sistema de Gestión de Asistencias.
-          </p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <p className="text-gray-400 mb-4">
+              © 2025 OpenAttendify. Sistema de Gestión de Asistencias de Código Abierto.
+            </p>
+            <div className="space-x-6">
+              <Link
+                href="/terminos"
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                Términos y Condiciones
+              </Link>
+            </div>
+          </div>
         </div>
       </footer>
     </div>

@@ -9,6 +9,7 @@ interface Empleado {
   nombre: string;
   apellido: string;
   cargo: string;
+  avatarUrl?: string | null;
   empresa: {
     id: string;
     nombre: string;
@@ -200,13 +201,19 @@ export default function EmpleadoPortal() {
           <div className="text-center">
             <div className="mb-6">
               <div
-                className={`inline-flex items-center justify-center w-24 h-24 rounded-full mb-4 ${
+                className={`inline-flex items-center justify-center w-24 h-24 rounded-full mb-4 overflow-hidden ${
                   asistenciaActiva
                     ? 'bg-green-100'
                     : 'bg-gray-100'
                 }`}
               >
-                {asistenciaActiva ? (
+                {empleado?.avatarUrl ? (
+                  <img
+                    src={empleado.avatarUrl}
+                    alt={empleado.nombre}
+                    className="w-full h-full object-cover"
+                  />
+                ) : asistenciaActiva ? (
                   <svg
                     className="w-12 h-12 text-green-600"
                     fill="none"
@@ -266,7 +273,7 @@ export default function EmpleadoPortal() {
               className={`w-full py-4 rounded-2xl font-bold text-lg shadow-lg transition-all duration-200 ${
                 asistenciaActiva
                   ? 'bg-red-500 hover:bg-red-600 text-white'
-                  : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white'
+                  : 'bg-green-500 hover:bg-green-600 text-white'
               } ${procesando ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {procesando

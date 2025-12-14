@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -112,6 +113,16 @@ export default function LoginPage() {
       <div className="flex-grow flex items-center justify-center px-4 py-12">
         <div className="max-w-md w-full">
           <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <Image
+                src="/logo.png"
+                alt="OpenAttendify Logo"
+                width={100}
+                height={100}
+                className="rounded-2xl shadow-lg"
+                priority
+              />
+            </div>
             <h2 className="text-3xl font-bold text-gray-900">Iniciar Sesión</h2>
             <p className="mt-2 text-gray-600">Accede a tu cuenta</p>
           </div>

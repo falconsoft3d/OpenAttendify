@@ -310,9 +310,14 @@ export default function DashboardPage() {
 
   return (
     <div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <p className="mt-2 text-gray-600">Bienvenido al panel de control</p>
+      </div>
+
       {/* Stats Cards Originales */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
+        <Link href="/dashboard/empresas" className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">Total Empresas</p>
@@ -324,9 +329,9 @@ export default function DashboardPage() {
               </svg>
             </div>
           </div>
-        </div>
+        </Link>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <Link href="/dashboard/empleados" className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">Total Empleados</p>
@@ -338,9 +343,9 @@ export default function DashboardPage() {
               </svg>
             </div>
           </div>
-        </div>
+        </Link>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <Link href="/dashboard/asistencias" className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 mb-1">Asistencias Hoy</p>
@@ -352,30 +357,30 @@ export default function DashboardPage() {
               </svg>
             </div>
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* KPIs de Horas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg shadow p-6 text-white">
+        <Link href="/dashboard/asistencias" className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg shadow p-6 text-white hover:shadow-lg transition-shadow cursor-pointer">
           <p className="text-indigo-100 text-sm mb-1">Horas Hoy</p>
           <p className="text-3xl font-bold">{formatearHoras(horasHoy)}</p>
-        </div>
+        </Link>
 
-        <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-lg shadow p-6 text-white">
+        <Link href="/dashboard/asistencias" className="bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-lg shadow p-6 text-white hover:shadow-lg transition-shadow cursor-pointer">
           <p className="text-cyan-100 text-sm mb-1">Horas Ayer</p>
           <p className="text-3xl font-bold">{formatearHoras(horasAyer)}</p>
-        </div>
+        </Link>
 
-        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg shadow p-6 text-white">
+        <Link href="/dashboard/asistencias" className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg shadow p-6 text-white hover:shadow-lg transition-shadow cursor-pointer">
           <p className="text-emerald-100 text-sm mb-1">Horas esta Semana</p>
           <p className="text-3xl font-bold">{formatearHoras(horasSemana)}</p>
-        </div>
+        </Link>
 
-        <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg shadow p-6 text-white">
+        <Link href="/dashboard/asistencias" className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg shadow p-6 text-white hover:shadow-lg transition-shadow cursor-pointer">
           <p className="text-amber-100 text-sm mb-1">Horas este Mes</p>
           <p className="text-3xl font-bold">{formatearHoras(horasMes)}</p>
-        </div>
+        </Link>
       </div>
 
       {/* Gráfico de Líneas */}

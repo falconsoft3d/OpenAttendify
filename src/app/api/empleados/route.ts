@@ -13,6 +13,7 @@ const empleadoSchema = z.object({
   telefono: z.string().optional(),
   cargo: z.string().optional(),
   empresaId: z.string().min(1, 'Debe seleccionar una empresa'),
+  avatarUrl: z.string().optional().or(z.literal('')),
 });
 
 // Función para generar el siguiente código de empleado
@@ -60,6 +61,7 @@ export async function GET(request: NextRequest) {
         email: true,
         telefono: true,
         cargo: true,
+        avatarUrl: true,
         fechaIngreso: true,
         activo: true,
         createdAt: true,
@@ -145,6 +147,7 @@ export async function POST(request: NextRequest) {
         empresaId: validatedData.empresaId,
         codigo,
         password: hashedPassword,
+        avatarUrl: validatedData.avatarUrl || null,
       },
       include: {
         empresa: {
