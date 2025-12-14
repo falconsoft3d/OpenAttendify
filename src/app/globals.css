@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  /* Asegurar que todos los inputs, selects y textareas tengan texto visible */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="search"],
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"],
+  select,
+  textarea {
+    @apply text-gray-900 bg-white;
+  }
+
+  /* Asegurar que los placeholders sean visibles */
+  input::placeholder,
+  textarea::placeholder {
+    @apply text-gray-400;
+  }
+
+  /* Para modo oscuro, si se implementa en el futuro */
+  @media (prefers-color-scheme: dark) {
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="tel"],
+    input[type="url"],
+    input[type="search"],
+    input[type="date"],
+    input[type="time"],
+    input[type="datetime-local"],
+    select,
+    textarea {
+      @apply text-gray-900 bg-white;
+    }
+  }
+}

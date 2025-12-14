@@ -1,0 +1,158 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  nombre    String
+  rol       Rol      @default(ADMIN)
+  loginEmpleadosExterno Boolean @default(false) // Permitir login de empleados desde apps externas
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relación con empresas
+  empresas  Empresa[]
+  
+  // Relación con integraciones
+  integraciones Integracion[]
+  
+  // Relación con API Keys
+  apiKeys   ApiKey[]
+
+  @@map("usuarios")
+}
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  nombre      String    // Nombre descriptivo de la key
+  key         String    @unique
+  activa      Boolean   @default(true)
+  ultimoUso   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relación con usuario
+  usuarioId   String
+  usuario     Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("api_keys")
+  @@index([usuarioId])
+}
+
+model Empresa {
+  id          String   @id @default(cuid())
+  nombre      String
+  ruc         String?  @unique
+  direccion   String?
+  telefono    String?
+  email       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relación con usuario creador
+  usuarioId   String
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  // Relación con empleados
+  empleados   Empleado[]
+
+  @@map("empresas")
+}
+
+model Empleado {
+  id            String      @id @default(cuid())
+  codigo        String      @unique // Código autogenerado (ej: 10001)
+  nombre        String
+  apellido      String
+  dni           String      @unique
+  password      String?     // Contraseña para el empleado
+  email         String?
+  telefono      String?
+  cargo         String?
+  fechaIngreso  DateTime    @default(now())
+  activo        Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Relación con empresa
+  empresaId     String
+  empresa       Empresa     @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  // Relación con asistencias
+  asistencias   Asistencia[]
+
+  @@map("empleados")
+}
+
+model Asistencia {
+  id              String          @id @default(cuid())
+  checkIn         DateTime        @default(now())
+  checkOut        DateTime?
+  tipoRegistro    TipoRegistro    @default(MANUAL)
+  observaciones   String?
+  odooAttendanceId Int?           // ID de la asistencia en Odoo
+  odooError       String?         // Error de sincronización con Odoo
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relación con empleado
+  empleadoId      String
+  empleado        Empleado        @relation(fields: [empleadoId], references: [id], onDelete: Cascade)
+
+  @@map("asistencias")
+  @@index([empleadoId, checkIn])
+}
+
+model Sesion {
+  id              String    @id @default(cuid())
+  usuarioId       String
+  email           String
+  token           String    @unique
+  remember        Boolean   @default(false)
+  expiresAt       DateTime
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("sesiones")
+  @@index([usuarioId])
+  @@index([token])
+}
+
+model Integracion {
+  id              String    @id @default(cuid())
+  tipo            TipoIntegracion
+  activo          Boolean   @default(false)
+  configuracion   Json      // Configuración específica de cada integración
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relación con usuario
+  usuarioId       String
+  usuario         Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, tipo])
+  @@map("integraciones")
+}
+
+enum Rol {
+  ADMIN
+  USUARIO
+}
+
+enum TipoRegistro {
+  MANUAL
+  BIOMETRICO
+  QR
+  GEOLOCALIZADO
+}
+
+enum TipoIntegracion {
+  ODOO
+}
