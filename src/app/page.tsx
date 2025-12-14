@@ -7,9 +7,16 @@ import { useEffect } from 'react';
 export default function Home() {
   useEffect(() => {
     // Registrar vista del home
+    console.log('🏠 Registrando vista del home...');
     fetch('/api/estadisticas/vista-home', {
       method: 'POST',
-    }).catch((error) => console.error('Error registrando vista:', error));
+    })
+      .then((res) => {
+        console.log('✅ Respuesta:', res.status);
+        return res.json();
+      })
+      .then((data) => console.log('✅ Datos:', data))
+      .catch((error) => console.error('❌ Error registrando vista:', error));
   }, []);
 
   return (

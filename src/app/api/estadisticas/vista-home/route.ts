@@ -3,19 +3,25 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('📊 Registrando vista del home...');
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
     const userAgent = request.headers.get('user-agent') || 'unknown';
 
-    await prisma.vistaHome.create({
+    console.log('🔍 IP:', ip);
+    console.log('🔍 User Agent:', userAgent);
+
+    const vista = await prisma.vistaHome.create({
       data: {
         ip,
         userAgent,
       },
     });
 
-    return NextResponse.json({ success: true });
+    console.log('✅ Vista registrada con ID:', vista.id);
+
+    return NextResponse.json({ success: true, id: vista.id });
   } catch (error) {
-    console.error('Error registrando vista:', error);
+    console.error('❌ Error registrando vista:', error);
     return NextResponse.json({ error: 'Error registrando vista' }, { status: 500 });
   }
 }

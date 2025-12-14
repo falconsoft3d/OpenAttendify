@@ -23,18 +23,8 @@ export default function EstadisticasPage() {
 
   const loadEstadisticas = async () => {
     try {
-      const response = await fetch('/api/estadisticas', {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await fetch('/api/estadisticas');
       
-      if (response.status === 401) {
-        router.push('/login');
-        return;
-      }
-
       if (!response.ok) {
         throw new Error('Error al cargar estadísticas');
       }

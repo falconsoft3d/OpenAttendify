@@ -8,6 +8,7 @@ const registerSchema = z.object({
   email: z.string().email('Email inválido'),
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
   nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
+  pais: z.string().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -52,6 +53,7 @@ export async function POST(request: NextRequest) {
         email: validatedData.email,
         password: hashedPassword,
         nombre: validatedData.nombre,
+        pais: validatedData.pais || null,
         rol: 'ADMIN', // Por defecto los usuarios son admins
         empresas: {
           create: {
