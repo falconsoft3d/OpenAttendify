@@ -10,9 +10,11 @@ export async function middleware(request: NextRequest) {
   const isPublicPath = path === '/' || 
                        path === '/login' || 
                        path === '/registro' ||
+                       path === '/estadisticas' ||
                        path.startsWith('/api/auth/login') ||
                        path.startsWith('/api/auth/register') ||
-                       path.startsWith('/api/auth/logout');
+                       path.startsWith('/api/auth/logout') ||
+                       path.startsWith('/api/estadisticas');
 
   // Rutas públicas del portal de empleados
   const isEmpleadoPublicPath = path === '/empleado/login' ||
@@ -61,7 +63,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Verificar el token en las rutas protegidas
-  const token = request.cookies.get('token')?.value || '';
+  const token = request.cookies.get('auth-token')?.value || request.cookies.get('token')?.value || '';
   // Si no hay token, redirigir al login
   if (!token) {
     if (path.startsWith('/api/')) {
@@ -77,6 +79,7 @@ export async function middleware(request: NextRequest) {
     const response = path.startsWith('/api/') 
       ? NextResponse.json({ error: 'Token inválido' }, { status: 401 })
       : NextResponse.redirect(new URL('/login', request.url));
+    response.cookies.delete('auth-token');
     response.cookies.delete('token');
     return response;
   }
@@ -90,6 +93,7 @@ export const config = {
   matcher: [
     '/dashboard/:path*',
     '/empleado/:path*',
+    '/estadisticas/:path*',
     '/api/:path*',
   ],
 };

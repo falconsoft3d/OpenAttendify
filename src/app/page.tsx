@@ -1,7 +1,17 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
+import { useEffect } from 'react';
 
 export default function Home() {
+  useEffect(() => {
+    // Registrar vista del home
+    fetch('/api/estadisticas/vista-home', {
+      method: 'POST',
+    }).catch((error) => console.error('Error registrando vista:', error));
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Navbar */}
