@@ -32,7 +32,7 @@ export async function PUT(
     // Verificar que la empresa pertenece al usuario
     const empresa = await prisma.empresa.findFirst({
       where: {
-        id: params.id,
+        id: id,
         usuarioId: payload.userId,
       },
     });
