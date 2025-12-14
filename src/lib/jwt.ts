@@ -1,7 +1,8 @@
 import { SignJWT, jwtVerify } from 'jose';
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'tu-clave-secreta-muy-segura'
+// Exportar el JWT_SECRET para usar en toda la aplicación
+export const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || 'tu-secret-key-super-segura-cambiala-en-produccion'
 );
 
 export interface TokenPayload {

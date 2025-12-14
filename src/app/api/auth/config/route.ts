@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/prisma';
-
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'tu-secreto-super-seguro-cambialo-en-produccion'
-);
+import { JWT_SECRET } from '@/lib/jwt';
 
 export async function GET(request: NextRequest) {
   try {
