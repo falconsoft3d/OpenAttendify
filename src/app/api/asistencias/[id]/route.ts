@@ -12,9 +12,10 @@ const asistenciaSchema = z.object({
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const token = request.cookies.get('token')?.value;
     if (!token) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
@@ -28,7 +29,7 @@ export async function PUT(
     // Verificar que la asistencia pertenece al usuario
     const asistenciaExistente = await prisma.asistencia.findFirst({
       where: {
-        id: params.id,
+        id: id,
         empleado: {
           empresa: {
             usuarioId: payload.userId,
@@ -71,7 +72,7 @@ export async function PUT(
       : null;
 
     const asistencia = await prisma.asistencia.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         empleadoId: validatedData.empleadoId,
         checkIn,
@@ -110,9 +111,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const token = request.cookies.get('token')?.value;
     if (!token) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
@@ -126,7 +128,7 @@ export async function DELETE(
     // Verificar que la asistencia pertenece al usuario
     const asistencia = await prisma.asistencia.findFirst({
       where: {
-        id: params.id,
+        id: id,
         empleado: {
           empresa: {
             usuarioId: payload.userId,
@@ -143,7 +145,7 @@ export async function DELETE(
     }
 
     await prisma.asistencia.delete({
-      where: { id: params.id },
+      where: { id: id },
     });
 
     return NextResponse.json({ success: true });
