@@ -3,6 +3,8 @@ import { verifyToken } from '@/lib/jwt';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+
 const empresaSchema = z.object({
   nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
   ruc: z.string().optional(),
@@ -13,9 +15,10 @@ const empresaSchema = z.object({
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const token = request.cookies.get('token')?.value;
     if (!token) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
@@ -45,7 +48,7 @@ export async function PUT(
     const validatedData = empresaSchema.parse(body);
 
     const empresaActualizada = await prisma.empresa.update({
-      where: { id: params.id },
+      where: { id: id },
       data: validatedData,
     });
 
@@ -68,9 +71,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const token = request.cookies.get('token')?.value;
     if (!token) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
@@ -84,7 +88,7 @@ export async function DELETE(
     // Verificar que la empresa pertenece al usuario
     const empresa = await prisma.empresa.findFirst({
       where: {
-        id: params.id,
+        id: id,
         usuarioId: payload.userId,
       },
     });
@@ -97,7 +101,7 @@ export async function DELETE(
     }
 
     await prisma.empresa.delete({
-      where: { id: params.id },
+      where: { id: id },
     });
 
     return NextResponse.json({ success: true });

@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 
+export const dynamic = 'force-dynamic';
+
 const empleadoSchema = z.object({
   codigo: z.string().optional(),
   nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
@@ -18,9 +20,10 @@ const empleadoSchema = z.object({
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const token = request.cookies.get('token')?.value;
     if (!token) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
@@ -34,7 +37,7 @@ export async function PUT(
     // Verificar que el empleado pertenece al usuario
     const empleado = await prisma.empleado.findFirst({
       where: {
-        id: params.id,
+        id: id,
         empresa: {
           usuarioId: payload.userId,
         },
@@ -77,7 +80,7 @@ export async function PUT(
     }
 
     const updatedEmpleado = await prisma.empleado.update({
-      where: { id: params.id },
+      where: { id: id },
       data: updateData,
       select: {
         id: true,
@@ -122,9 +125,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const token = request.cookies.get('token')?.value;
     if (!token) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
@@ -138,7 +142,7 @@ export async function DELETE(
     // Verificar que el empleado pertenece al usuario
     const empleado = await prisma.empleado.findFirst({
       where: {
-        id: params.id,
+        id: id,
         empresa: {
           usuarioId: payload.userId,
         },
@@ -153,7 +157,7 @@ export async function DELETE(
     }
 
     await prisma.empleado.delete({
-      where: { id: params.id },
+      where: { id: id },
     });
 
     return NextResponse.json({ success: true });
@@ -168,9 +172,10 @@ export async function DELETE(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const token = request.cookies.get('token')?.value;
     if (!token) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
@@ -184,7 +189,7 @@ export async function PATCH(
     // Verificar que el empleado pertenece al usuario
     const empleado = await prisma.empleado.findFirst({
       where: {
-        id: params.id,
+        id: id,
         empresa: {
           usuarioId: payload.userId,
         },
@@ -201,7 +206,7 @@ export async function PATCH(
     const body = await request.json();
 
     const updatedEmpleado = await prisma.empleado.update({
-      where: { id: params.id },
+      where: { id: id },
       data: body,
       select: {
         id: true,
