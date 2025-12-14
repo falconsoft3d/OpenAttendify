@@ -31,7 +31,7 @@ export async function verifyToken(token: string): Promise<TokenPayload | null> {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     console.log('✅ Token decodificado exitosamente:', { userId: payload.userId, email: payload.email });
     
-    return payload as TokenPayload;
+    return payload as unknown as TokenPayload;
   } catch (error) {
     console.error('❌ Error al verificar token:', error instanceof Error ? error.message : error);
     return null;

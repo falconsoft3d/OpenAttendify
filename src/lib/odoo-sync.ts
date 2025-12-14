@@ -372,15 +372,23 @@ export async function sincronizarAsistenciaConOdoo(
       return null;
     }
 
-    const config = integracion.configuracion as OdooConfig;
+    const config = integracion.configuracion as unknown as OdooConfig;
 
     // Autenticar en Odoo (lanza excepción si falla)
     console.log('🔐 Autenticando en Odoo...');
     const auth = await authenticateOdoo(config);
+    
+    if (!auth) {
+      throw new Error('No se pudo autenticar en Odoo');
+    }
 
     // Buscar empleado en Odoo (lanza excepción si falla)
     console.log('🔍 Buscando empleado en Odoo...');
     const empleadoOdooId = await buscarEmpleadoEnOdoo(config, auth, empleado);
+    
+    if (!empleadoOdooId) {
+      throw new Error('No se encontró el empleado en Odoo');
+    }
 
     // Registrar asistencia según el tipo
     if (tipo === 'entrada') {

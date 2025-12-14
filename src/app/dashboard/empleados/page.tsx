@@ -35,7 +35,7 @@ export default function EmpleadosPage() {
     telefono: '',
     cargo: '',
     empresaId: '',
-    password: '',
+    password: '' as string | undefined,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [passwordGenerated, setPasswordGenerated] = useState(false);
@@ -372,23 +372,22 @@ export default function EmpleadosPage() {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {editingId && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Código de Empleado
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 bg-white font-mono"
-                    value={formData.codigo}
-                    onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
-                    placeholder="Ej: 10001"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Código único para acceso al portal móvil
-                  </p>
-                </div>
-              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Código de Empleado *
+                </label>
+                <input
+                  type="text"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 bg-white font-mono"
+                  value={formData.codigo}
+                  onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
+                  placeholder="Ej: 10001"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Código único para acceso al portal móvil
+                </p>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Nombre *

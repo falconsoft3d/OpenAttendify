@@ -24,7 +24,7 @@ export default function IntegracionesPage() {
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<{ success: boolean; message: string; details?: any } | null>(null);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string; error?: string; details?: any } | null>(null);
   const [connectionTested, setConnectionTested] = useState(false);
   
   // Estados para API Key
@@ -187,7 +187,7 @@ export default function IntegracionesPage() {
       }
     } catch (error) {
       console.error('Error al actualizar configuración:', error);
-      alert('Error al actualizar configuración: ' + error.message);
+      alert('Error al actualizar configuración: ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 

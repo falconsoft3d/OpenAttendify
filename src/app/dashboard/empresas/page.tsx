@@ -81,6 +81,18 @@ export default function EmpresasPage() {
     }
   };
 
+  const handleEdit = (empresa: Empresa) => {
+    setEditingId(empresa.id);
+    setFormData({
+      nombre: empresa.nombre,
+      ruc: empresa.ruc || '',
+      direccion: empresa.direccion || '',
+      telefono: empresa.telefono || '',
+      email: empresa.email || '',
+    });
+    setShowModal(true);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
