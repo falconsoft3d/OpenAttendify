@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             nombre: true,
+            usuarioId: true,
           },
         },
       },
@@ -57,7 +58,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ empleado }, { status: 200 });
+    // Obtener configuración del usuario de la empresa
+    const configuracion = await prisma.configuracion.findUnique({
+      where: { usuarioId: empleado.empresa.usuarioId }
+    });
+
+    return NextResponse.json({ 
+      empleado: {
+        ...empleado,
+        empresa: {
+          id: empleado.empresa.id,
+          nombre: empleado.empresa.nombre,
+        }
+      },
+      configuracion: configuracion || { usarProyectosAsistencia: false }
+    }, { status: 200 });
   } catch (error) {
     console.error('❌ Error en /api/empleado/me:', error);
     return NextResponse.json(

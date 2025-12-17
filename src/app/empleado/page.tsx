@@ -30,14 +30,37 @@ export default function EmpleadoPortal() {
   const [procesando, setProcesando] = useState(false);
   const [mensaje, setMensaje] = useState('');
   const [error, setError] = useState('');
+  const [usarProyectosAsistencia, setUsarProyectosAsistencia] = useState(false);
+  const [proyectos, setProyectos] = useState<any[]>([]);
+  const [proyectoSeleccionado, setProyectoSeleccionado] = useState<string | null>(null);
+  const [busquedaProyecto, setBusquedaProyecto] = useState('');
+  const [mostrarListaProyectos, setMostrarListaProyectos] = useState(false);
 
   useEffect(() => {
     cargarDatos();
   }, []);
 
+  // Cerrar dropdown al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.proyecto-selector')) {
+        setMostrarListaProyectos(false);
+      }
+    };
+
+    if (mostrarListaProyectos) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [mostrarListaProyectos]);
+
   const cargarDatos = async () => {
     try {
-      // Obtener datos del empleado
+      // Obtener datos del empleado y configuración
       const resEmpleado = await fetch('/api/empleado/me');
       if (!resEmpleado.ok) {
         router.push('/empleado/login');
@@ -45,12 +68,27 @@ export default function EmpleadoPortal() {
       }
       const dataEmpleado = await resEmpleado.json();
       setEmpleado(dataEmpleado.empleado);
+      
+      // Obtener configuración (viene incluida en el response)
+      if (dataEmpleado.configuracion) {
+        setUsarProyectosAsistencia(dataEmpleado.configuracion.usarProyectosAsistencia || false);
+      }
 
       // Obtener asistencia activa
       const resAsistencia = await fetch('/api/empleado/asistencia?tipo=activa');
       if (resAsistencia.ok) {
         const dataAsistencia = await resAsistencia.json();
         setAsistenciaActiva(dataAsistencia.asistencia);
+      }
+
+      // Si está activado usar proyectos, cargarlos
+      if (dataEmpleado.configuracion?.usarProyectosAsistencia) {
+        // Obtener proyectos de la empresa del empleado
+        const resProyectos = await fetch('/api/empleado/proyectos');
+        if (resProyectos.ok) {
+          const dataProyectos = await resProyectos.json();
+          setProyectos(dataProyectos.proyectos);
+        }
       }
     } catch (error) {
       console.error('Error al cargar datos:', error);
@@ -66,8 +104,19 @@ export default function EmpleadoPortal() {
     setMensaje('');
 
     try {
+      const body: any = {};
+      
+      // Si se requiere proyecto, incluirlo en el body
+      if (usarProyectosAsistencia && proyectoSeleccionado) {
+        body.proyectoId = proyectoSeleccionado;
+      }
+
       const res = await fetch('/api/empleado/asistencia', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
       });
 
       const data = await res.json();
@@ -79,6 +128,10 @@ export default function EmpleadoPortal() {
 
       setMensaje('¡Entrada registrada exitosamente!');
       setAsistenciaActiva(data.asistencia);
+      
+      // Limpiar selección de proyecto
+      setProyectoSeleccionado(null);
+      setBusquedaProyecto('');
       
       setTimeout(() => setMensaje(''), 3000);
     } catch (error) {
@@ -266,15 +319,68 @@ export default function EmpleadoPortal() {
               )}
             </div>
 
+            {/* Selector de proyecto - Solo visible cuando está configurado y no hay asistencia activa */}
+            {!asistenciaActiva && usarProyectosAsistencia && (
+              <div className="mb-4 proyecto-selector">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Proyecto *
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={busquedaProyecto}
+                    onChange={(e) => {
+                      setBusquedaProyecto(e.target.value);
+                      setMostrarListaProyectos(true);
+                    }}
+                    onFocus={() => setMostrarListaProyectos(true)}
+                    placeholder="Buscar por código o nombre..."
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  
+                  {mostrarListaProyectos && proyectos.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {proyectos
+                        .filter((p) =>
+                          busquedaProyecto === '' ||
+                          p.codigo.toLowerCase().includes(busquedaProyecto.toLowerCase()) ||
+                          p.nombre.toLowerCase().includes(busquedaProyecto.toLowerCase())
+                        )
+                        .map((proyecto) => (
+                          <button
+                            key={proyecto.id}
+                            type="button"
+                            onClick={() => {
+                              setProyectoSeleccionado(proyecto.id);
+                              setBusquedaProyecto(`${proyecto.codigo} - ${proyecto.nombre}`);
+                              setMostrarListaProyectos(false);
+                            }}
+                            className={`w-full text-left px-4 py-2 hover:bg-blue-50 transition-colors ${
+                              proyectoSeleccionado === proyecto.id ? 'bg-blue-100' : ''
+                            }`}
+                          >
+                            <div className="font-medium text-gray-900">{proyecto.codigo}</div>
+                            <div className="text-sm text-gray-600">{proyecto.nombre}</div>
+                          </button>
+                        ))}
+                    </div>
+                  )}
+                </div>
+                {proyectoSeleccionado && (
+                  <p className="mt-1 text-xs text-green-600">✓ Proyecto seleccionado</p>
+                )}
+              </div>
+            )}
+
             {/* Botón principal */}
             <button
               onClick={asistenciaActiva ? registrarSalida : registrarEntrada}
-              disabled={procesando}
+              disabled={procesando || (!asistenciaActiva && usarProyectosAsistencia && !proyectoSeleccionado)}
               className={`w-full py-4 rounded-2xl font-bold text-lg shadow-lg transition-all duration-200 ${
                 asistenciaActiva
                   ? 'bg-red-500 hover:bg-red-600 text-white'
                   : 'bg-green-500 hover:bg-green-600 text-white'
-              } ${procesando ? 'opacity-50 cursor-not-allowed' : ''}`}
+              } ${procesando || (!asistenciaActiva && usarProyectosAsistencia && !proyectoSeleccionado) ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {procesando
                 ? 'Procesando...'
@@ -282,6 +388,11 @@ export default function EmpleadoPortal() {
                 ? 'REGISTRAR SALIDA'
                 : 'REGISTRAR ENTRADA'}
             </button>
+            {!asistenciaActiva && usarProyectosAsistencia && !proyectoSeleccionado && (
+              <p className="mt-2 text-xs text-red-500 text-center">
+                Debes seleccionar un proyecto para registrar tu entrada
+              </p>
+            )}
           </div>
         </div>
 

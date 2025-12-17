@@ -16,6 +16,8 @@ interface Empleado {
   email: string | null;
   telefono: string | null;
   cargo: string | null;
+  sueldo: number | null;
+  costoHora: number | null;
   activo: boolean;
   avatarUrl?: string | null;
   empresa: Empresa;
@@ -42,6 +44,8 @@ export default function EmpleadosPage() {
     email: '',
     telefono: '',
     cargo: '',
+    sueldo: 0,
+    costoHora: 0,
     empresaId: '',
     password: '' as string | undefined,
     avatarUrl: '' as string | undefined,
@@ -83,6 +87,8 @@ export default function EmpleadosPage() {
         email: '',
         telefono: '',
         cargo: '',
+        sueldo: 0,
+        costoHora: 0,
         empresaId: empresas[0].id,
         password: '',
         avatarUrl: '',
@@ -219,6 +225,8 @@ export default function EmpleadosPage() {
           email: '',
           telefono: '',
           cargo: '',
+          sueldo: 0,
+          costoHora: 0,
           empresaId: '',
           password: '',
           avatarUrl: '',
@@ -253,6 +261,8 @@ export default function EmpleadosPage() {
       email: empleado.email || '',
       telefono: empleado.telefono || '',
       cargo: empleado.cargo || '',
+      sueldo: empleado.sueldo || 0,
+      costoHora: empleado.costoHora || 0,
       empresaId: empleado.empresa.id,
       password: '', // No cargar la contraseña existente
       avatarUrl: empleado.avatarUrl || '',
@@ -732,6 +742,8 @@ export default function EmpleadosPage() {
                     email: '',
                     telefono: '',
                     cargo: '',
+                    sueldo: 0,
+                    costoHora: 0,
                     empresaId: '',
                     password: '',
                     avatarUrl: '',
@@ -881,6 +893,30 @@ export default function EmpleadosPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 bg-white"
                   value={formData.cargo}
                   onChange={(e) => setFormData({ ...formData, cargo: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sueldo</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 bg-white"
+                  value={formData.sueldo}
+                  onChange={(e) => setFormData({ ...formData, sueldo: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Costo por Hora</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 bg-white"
+                  value={formData.costoHora}
+                  onChange={(e) => setFormData({ ...formData, costoHora: parseFloat(e.target.value) || 0 })}
                 />
               </div>
 

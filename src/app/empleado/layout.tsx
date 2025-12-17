@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 export default function EmpleadoLayout({
   children,
@@ -9,6 +10,62 @@ export default function EmpleadoLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [documentosFaltantes, setDocumentosFaltantes] = useState(0);
+  const [informacionesNuevas, setInformacionesNuevas] = useState(0);
+
+  useEffect(() => {
+    // Cargar el conteo de documentos faltantes e informaciones nuevas
+    if (pathname !== '/empleado/login') {
+      cargarDocumentosFaltantes();
+      cargarInformacionesNuevas();
+    }
+  }, [pathname]);
+
+  const cargarDocumentosFaltantes = async () => {
+    try {
+      const response = await fetch('/api/empleado/tipos-documentacion', {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        // Contar tipos que no tienen documento o están vencidos
+        const faltantes = data.filter((tipo: any) => {
+          if (!tipo.tiene) return true;
+          if (tipo.documentoActual) {
+            const vencido = new Date(tipo.documentoActual.fechaVencimiento) < new Date();
+            return vencido;
+          }
+          return false;
+        }).length;
+        setDocumentosFaltantes(faltantes);
+      }
+    } catch (error) {
+      console.error('Error al cargar documentos faltantes:', error);
+    }
+  };
+
+  const cargarInformacionesNuevas = async () => {
+    try {
+      const response = await fetch('/api/empleado/informaciones', {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const ahora = new Date();
+        const tresDiasAtras = new Date(ahora.getTime() - 3 * 24 * 60 * 60 * 1000);
+        
+        // Contar informaciones creadas en los últimos 3 días
+        const nuevas = data.informaciones.filter((info: any) => {
+          const fechaCreacion = new Date(info.createdAt);
+          return fechaCreacion >= tresDiasAtras;
+        }).length;
+        
+        setInformacionesNuevas(nuevas);
+      }
+    } catch (error) {
+      console.error('Error al cargar informaciones nuevas:', error);
+    }
+  };
 
   // No mostrar el layout en la página de login
   if (pathname === '/empleado/login') {
@@ -71,6 +128,88 @@ export default function EmpleadoLayout({
               />
             </svg>
             <span className="text-xs font-medium">Historial</span>
+          </Link>
+
+          <Link
+            href="/empleado/solicitudes"
+            className={`flex flex-col items-center justify-center flex-1 h-full ${
+              pathname === '/empleado/solicitudes'
+                ? 'text-blue-600'
+                : 'text-gray-600'
+            }`}
+          >
+            <svg
+              className="w-6 h-6 mb-1"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            <span className="text-xs font-medium">Solicitudes</span>
+          </Link>
+
+          <Link
+            href="/empleado/informaciones"
+            className={`flex flex-col items-center justify-center flex-1 h-full relative ${
+              pathname === '/empleado/informaciones'
+                ? 'text-blue-600'
+                : 'text-gray-600'
+            }`}
+          >
+            {informacionesNuevas > 0 && (
+              <span className="absolute top-1 right-3 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                {informacionesNuevas}
+              </span>
+            )}
+            <svg
+              className="w-6 h-6 mb-1"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span className="text-xs font-medium">Información</span>
+          </Link>
+
+          <Link
+            href="/empleado/documentacion"
+            className={`flex flex-col items-center justify-center flex-1 h-full relative ${
+              pathname === '/empleado/documentacion'
+                ? 'text-blue-600'
+                : 'text-gray-600'
+            }`}
+          >
+            {documentosFaltantes > 0 && (
+              <span className="absolute top-1 right-3 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                {documentosFaltantes}
+              </span>
+            )}
+            <svg
+              className="w-6 h-6 mb-1"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            <span className="text-xs font-medium">Documentos</span>
           </Link>
         </div>
       </nav>

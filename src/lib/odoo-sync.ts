@@ -171,7 +171,8 @@ async function registrarCheckInOdoo(
   config: OdooConfig,
   auth: OdooAuthResult,
   empleadoOdooId: number,
-  fecha: Date
+  fecha: Date,
+  projectId?: number
 ): Promise<number | null> {
   try {
     const odooUrl = `${config.url}:${config.puerto}`;
@@ -180,6 +181,17 @@ async function registrarCheckInOdoo(
     const formatoOdoo = fecha.toISOString()
       .replace('T', ' ')
       .replace(/\.\d{3}Z$/, '');
+    
+    const attendanceData: any = {
+      employee_id: empleadoOdooId,
+      check_in: formatoOdoo,
+    };
+
+    // Agregar project_id si está presente
+    if (projectId) {
+      attendanceData.project_id = projectId;
+      console.log(`📋 Asignando asistencia al proyecto Odoo ID: ${projectId}`);
+    }
     
     const response = await fetch(`${odooUrl}/jsonrpc`, {
       method: 'POST',
@@ -198,12 +210,7 @@ async function registrarCheckInOdoo(
             config.contrasena,
             'hr.attendance',
             'create',
-            [
-              {
-                employee_id: empleadoOdooId,
-                check_in: formatoOdoo,
-              },
-            ],
+            [attendanceData],
           ],
         },
         id: 3,
@@ -353,7 +360,8 @@ export async function sincronizarAsistenciaConOdoo(
   usuarioId: string,
   empleado: { email: string | null; dni: string; codigo: string },
   tipo: 'entrada' | 'salida',
-  fecha: Date
+  fecha: Date,
+  projectId?: number
 ): Promise<number | null> {
   try {
     console.log(`🔄 Intentando sincronizar ${tipo} con Odoo...`);
@@ -392,7 +400,7 @@ export async function sincronizarAsistenciaConOdoo(
 
     // Registrar asistencia según el tipo
     if (tipo === 'entrada') {
-      const odooAttendanceId = await registrarCheckInOdoo(config, auth, empleadoOdooId, fecha);
+      const odooAttendanceId = await registrarCheckInOdoo(config, auth, empleadoOdooId, fecha, projectId);
       console.log(`✅ Entrada sincronizada exitosamente con Odoo (ID: ${odooAttendanceId})`);
       return odooAttendanceId;
     } else {

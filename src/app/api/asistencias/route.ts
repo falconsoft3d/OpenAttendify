@@ -41,6 +41,13 @@ export async function GET(request: NextRequest) {
             },
           },
         },
+        proyecto: {
+          select: {
+            id: true,
+            codigo: true,
+            nombre: true,
+          },
+        },
       },
       orderBy: { checkIn: 'desc' },
     });

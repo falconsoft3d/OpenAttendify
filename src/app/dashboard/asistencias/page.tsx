@@ -22,6 +22,11 @@ interface Asistencia {
   observaciones: string | null;
   odooAttendanceId: number | null;
   odooError: string | null;
+  proyecto?: {
+    id: string;
+    codigo: string;
+    nombre: string;
+  } | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -60,6 +65,7 @@ export default function AsistenciasPage() {
     checkIn: true,
     checkOut: true,
     horas: true,
+    proyecto: true,
     empresa: true,
     estadoOdoo: true,
     creado: false,
@@ -560,6 +566,11 @@ export default function AsistenciasPage() {
                     Horas
                   </th>
                 )}
+                {columnasVisibles.proyecto && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Proyecto
+                  </th>
+                )}
                 {columnasVisibles.empresa && (
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Empresa
@@ -612,6 +623,18 @@ export default function AsistenciasPage() {
                   {columnasVisibles.horas && (
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-blue-600">
                       {asistencia.checkOut ? formatearHoras(horasTrabajadas) : '-'}
+                    </td>
+                  )}
+                  {columnasVisibles.proyecto && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {asistencia.proyecto ? (
+                        <div>
+                          <div className="font-medium text-gray-900">{asistencia.proyecto.codigo}</div>
+                          <div className="text-xs text-gray-500">{asistencia.proyecto.nombre}</div>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
                     </td>
                   )}
                   {columnasVisibles.empresa && (

@@ -18,6 +18,10 @@ interface Counts {
   empleados: number;
   asistencias: number;
   usuarios: number;
+  proyectos: number;
+  solicitudes: number;
+  informaciones: number;
+  documentaciones: number;
 }
 
 export default function DashboardLayout({
@@ -33,6 +37,10 @@ export default function DashboardLayout({
     empleados: 0,
     asistencias: 0,
     usuarios: 0,
+    proyectos: 0,
+    solicitudes: 0,
+    informaciones: 0,
+    documentaciones: 0,
   });
 
   useEffect(() => {
@@ -58,18 +66,26 @@ export default function DashboardLayout({
 
   const loadCounts = async () => {
     try {
-      const [empresasRes, empleadosRes, asistenciasRes, usuariosRes] = await Promise.all([
+      const [empresasRes, empleadosRes, asistenciasRes, usuariosRes, proyectosRes, solicitudesRes, informacionesRes, documentacionesRes] = await Promise.all([
         fetch('/api/empresas'),
         fetch('/api/empleados'),
         fetch('/api/asistencias'),
         fetch('/api/usuarios'),
+        fetch('/api/proyectos', { credentials: 'include' }),
+        fetch('/api/solicitudes', { credentials: 'include' }),
+        fetch('/api/informaciones', { credentials: 'include' }),
+        fetch('/api/documentaciones', { credentials: 'include' }),
       ]);
 
-      const [empresas, empleados, asistencias, usuarios] = await Promise.all([
+      const [empresas, empleados, asistencias, usuarios, proyectos, solicitudes, informaciones, documentaciones] = await Promise.all([
         empresasRes.json(),
         empleadosRes.json(),
         asistenciasRes.json(),
         usuariosRes.json(),
+        proyectosRes.json(),
+        solicitudesRes.json(),
+        informacionesRes.json(),
+        documentacionesRes.json(),
       ]);
 
       setCounts({
@@ -77,6 +93,10 @@ export default function DashboardLayout({
         empleados: empleados.length || 0,
         asistencias: asistencias.length || 0,
         usuarios: usuarios.length || 0,
+        proyectos: proyectos.length || 0,
+        solicitudes: solicitudes.solicitudes?.length || 0,
+        informaciones: informaciones.informaciones?.length || 0,
+        documentaciones: documentaciones.length || 0,
       });
     } catch (error) {
       console.error('Error cargando contadores:', error);
@@ -112,7 +132,7 @@ export default function DashboardLayout({
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-2">
+          <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
             <Link
               href="/dashboard"
               className="flex items-center space-x-3 text-gray-700 hover:bg-primary-50 hover:text-primary-600 px-4 py-3 rounded-lg transition-colors"
@@ -154,6 +174,21 @@ export default function DashboardLayout({
             </Link>
 
             <Link
+              href="/dashboard/proyectos"
+              className="flex items-center space-x-3 text-gray-700 hover:bg-primary-50 hover:text-primary-600 px-4 py-3 rounded-lg transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span className="font-medium">Proyectos</span>
+              {counts.proyectos > 0 && (
+                <span className="ml-auto bg-primary-100 text-primary-600 text-xs font-semibold px-2 py-1 rounded-full">
+                  {counts.proyectos}
+                </span>
+              )}
+            </Link>
+
+            <Link
               href="/dashboard/asistencias"
               className="flex items-center space-x-3 text-gray-700 hover:bg-primary-50 hover:text-primary-600 px-4 py-3 rounded-lg transition-colors"
             >
@@ -164,6 +199,51 @@ export default function DashboardLayout({
               {counts.asistencias > 0 && (
                 <span className="ml-auto bg-primary-100 text-primary-600 text-xs font-semibold px-2 py-1 rounded-full">
                   {counts.asistencias}
+                </span>
+              )}
+            </Link>
+
+            <Link
+              href="/dashboard/solicitudes"
+              className="flex items-center space-x-3 text-gray-700 hover:bg-primary-50 hover:text-primary-600 px-4 py-3 rounded-lg transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span className="font-medium">Solicitudes</span>
+              {counts.solicitudes > 0 && (
+                <span className="ml-auto bg-primary-100 text-primary-600 text-xs font-semibold px-2 py-1 rounded-full">
+                  {counts.solicitudes}
+                </span>
+              )}
+            </Link>
+
+            <Link
+              href="/dashboard/informaciones"
+              className="flex items-center space-x-3 text-gray-700 hover:bg-primary-50 hover:text-primary-600 px-4 py-3 rounded-lg transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="font-medium">Informaciones</span>
+              {counts.informaciones > 0 && (
+                <span className="ml-auto bg-primary-100 text-primary-600 text-xs font-semibold px-2 py-1 rounded-full">
+                  {counts.informaciones}
+                </span>
+              )}
+            </Link>
+
+            <Link
+              href="/dashboard/documentaciones"
+              className="flex items-center space-x-3 text-gray-700 hover:bg-primary-50 hover:text-primary-600 px-4 py-3 rounded-lg transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span className="font-medium">Documentación</span>
+              {counts.documentaciones > 0 && (
+                <span className="ml-auto bg-primary-100 text-primary-600 text-xs font-semibold px-2 py-1 rounded-full">
+                  {counts.documentaciones}
                 </span>
               )}
             </Link>
@@ -191,6 +271,17 @@ export default function DashboardLayout({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
               <span className="font-medium">Integraciones</span>
+            </Link>
+
+            <Link
+              href="/dashboard/configuracion"
+              className="flex items-center space-x-3 text-gray-700 hover:bg-primary-50 hover:text-primary-600 px-4 py-3 rounded-lg transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span className="font-medium">Configuración</span>
             </Link>
           </nav>
 

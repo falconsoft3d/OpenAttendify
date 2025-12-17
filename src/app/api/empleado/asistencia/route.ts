@@ -87,6 +87,15 @@ export async function POST(request: NextRequest) {
     }
 
     const empleadoId = payload.empleadoId as string;
+    
+    // Leer el body para obtener el proyectoId (opcional)
+    let proyectoId: string | undefined;
+    try {
+      const body = await request.json();
+      proyectoId = body.proyectoId;
+    } catch (error) {
+      // Si no hay body, continuar sin proyecto
+    }
 
     // Verificar que no haya una asistencia activa
     const asistenciaActiva = await prisma.asistencia.findFirst({
@@ -129,8 +138,100 @@ export async function POST(request: NextRequest) {
       data: {
         empleadoId,
         checkIn: fechaEntrada,
+        proyectoId: proyectoId || undefined, // Incluir proyecto si está presente
       },
     });
+
+    // Si hay proyecto seleccionado, buscar en Odoo
+    let odooProjectId: number | null = null;
+    if (proyectoId) {
+      try {
+        const proyecto = await prisma.proyecto.findUnique({
+          where: { id: proyectoId },
+          select: { codigo: true },
+        });
+
+        if (proyecto) {
+          // Buscar integración Odoo activa
+          const integracion = await prisma.integracion.findFirst({
+            where: {
+              usuarioId: empleado.empresa.usuarioId,
+              tipo: 'ODOO',
+              activo: true,
+            },
+          });
+
+          if (integracion) {
+            const config = integracion.configuracion as any;
+            const odooUrl = `${config.url}:${config.puerto}`;
+            
+            // Autenticarse en Odoo
+            const authResponse = await fetch(`${odooUrl}/jsonrpc`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                jsonrpc: '2.0',
+                method: 'call',
+                params: {
+                  service: 'common',
+                  method: 'authenticate',
+                  args: [config.database, config.usuario, config.contrasena, {}],
+                },
+                id: Math.floor(Math.random() * 1000000),
+              }),
+            });
+
+            const authData = await authResponse.json();
+            const uid = authData.result;
+
+            if (uid) {
+              // Buscar proyecto en Odoo por el campo 'name' (código)
+              const searchResponse = await fetch(`${odooUrl}/jsonrpc`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  jsonrpc: '2.0',
+                  method: 'call',
+                  params: {
+                    service: 'object',
+                    method: 'execute_kw',
+                    args: [
+                      config.database,
+                      uid,
+                      config.contrasena,
+                      'bim.project',
+                      'search',
+                      [[['name', '=', proyecto.codigo]]],
+                    ],
+                  },
+                  id: Math.floor(Math.random() * 1000000),
+                }),
+              });
+
+              const searchData = await searchResponse.json();
+              const projectIds = searchData.result;
+
+              if (projectIds && projectIds.length > 0) {
+                odooProjectId = projectIds[0];
+                console.log(`✅ Proyecto encontrado en Odoo: ${proyecto.codigo} -> ID ${odooProjectId}`);
+              } else {
+                console.log(`⚠️  Proyecto no encontrado en Odoo: ${proyecto.codigo}`);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error al buscar proyecto en Odoo:', error);
+      }
+    }
+
+    // Actualizar asistencia con odooProjectId si se encontró
+    if (odooProjectId) {
+      await prisma.asistencia.update({
+        where: { id: asistencia.id },
+        data: { odooProjectId },
+      });
+    }
 
     // Sincronizar con Odoo si hay integración activa
     try {
@@ -142,7 +243,8 @@ export async function POST(request: NextRequest) {
           codigo: empleado.codigo,
         },
         'entrada',
-        fechaEntrada
+        fechaEntrada,
+        odooProjectId || undefined // Pasar el project_id de Odoo
       );
 
       // Si se creó en Odoo, guardar el ID

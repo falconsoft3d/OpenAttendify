@@ -27,6 +27,18 @@ model Usuario {
   
   // Relación con API Keys
   apiKeys   ApiKey[]
+  
+  // Relación con configuración
+  configuracion Configuracion?
+  
+  // Relación con informaciones
+  informaciones Informacion[]
+  
+  // Relación con documentaciones
+  documentaciones Documentacion[]
+  
+  // Relación con tipos de documentación
+  tiposDocumentacion TipoDocumentacion[]
 
   @@map("usuarios")
 }
@@ -64,6 +76,9 @@ model Empresa {
 
   // Relación con empleados
   empleados   Empleado[]
+  
+  // Relación con proyectos
+  proyectos   Proyecto[]
 
   @@map("empresas")
 }
@@ -79,6 +94,8 @@ model Empleado {
   email         String?
   telefono      String?
   cargo         String?
+  sueldo        Decimal?    @db.Decimal(10, 2) // Sueldo del empleado
+  costoHora     Decimal?    @db.Decimal(10, 2) // Costo por hora
   fechaIngreso  DateTime    @default(now())
   activo        Boolean     @default(true)
   createdAt     DateTime    @default(now())
@@ -90,8 +107,33 @@ model Empleado {
 
   // Relación con asistencias
   asistencias   Asistencia[]
+  
+  // Relación con solicitudes
+  solicitudes   Solicitud[]
+  
+  // Relación con documentaciones
+  documentaciones Documentacion[]
 
   @@map("empleados")
+}
+
+model Proyecto {
+  id          String   @id @default(cuid())
+  codigo      String   @unique // Código único del proyecto
+  nombre      String
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relación con empresa
+  empresaId   String
+  empresa     Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  // Relación con asistencias
+  asistencias Asistencia[]
+
+  @@map("proyectos")
+  @@index([empresaId])
 }
 
 model Asistencia {
@@ -101,6 +143,7 @@ model Asistencia {
   tipoRegistro    TipoRegistro    @default(MANUAL)
   observaciones   String?
   odooAttendanceId Int?           // ID de la asistencia en Odoo
+  odooProjectId   Int?            // ID del proyecto en Odoo (bim.project)
   odooError       String?         // Error de sincronización con Odoo
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
@@ -108,6 +151,10 @@ model Asistencia {
   // Relación con empleado
   empleadoId      String
   empleado        Empleado        @relation(fields: [empleadoId], references: [id], onDelete: Cascade)
+
+  // Relación con proyecto (opcional)
+  proyectoId      String?
+  proyecto        Proyecto?       @relation(fields: [proyectoId], references: [id], onDelete: SetNull)
 
   @@map("asistencias")
   @@index([empleadoId, checkIn])
@@ -160,6 +207,44 @@ enum TipoIntegracion {
   ODOO
 }
 
+model Configuracion {
+  id                      String   @id @default(cuid())
+  usarProyectosAsistencia Boolean  @default(false) // Activar proyectos en asistencia
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  // Relación con usuario
+  usuarioId String  @unique
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("configuraciones")
+}
+
+model Solicitud {
+  id          String          @id @default(cuid())
+  secuencia   String          @unique // SOL-00001
+  fecha       DateTime        @default(now())
+  texto       String          @db.Text // Descripción de la solicitud
+  valor       Decimal         @db.Decimal(10, 2) // Valor monetario
+  estado      EstadoSolicitud @default(SOLICITADO)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  // Relación con empleado
+  empleadoId  String
+  empleado    Empleado        @relation(fields: [empleadoId], references: [id], onDelete: Cascade)
+
+  @@map("solicitudes")
+  @@index([empleadoId])
+  @@index([fecha])
+}
+
+enum EstadoSolicitud {
+  SOLICITADO
+  APROBADO
+  RECHAZADO
+}
+
 model VistaHome {
   id        String   @id @default(cuid())
   ip        String?
@@ -168,4 +253,74 @@ model VistaHome {
 
   @@map("vistas_home")
   @@index([createdAt])
+}
+
+model Informacion {
+  id            String            @id @default(cuid())
+  secuencia     String            @unique // INF-00001
+  titulo        String
+  descripcion   String            @db.Text
+  clasificacion ClasificacionInfo @default(INFORMATIVA)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  // Relación con usuario
+  usuarioId     String
+  usuario       Usuario           @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("informaciones")
+  @@index([usuarioId])
+  @@index([clasificacion])
+}
+
+enum ClasificacionInfo {
+  INFORMATIVA
+  ALERTA
+  OTRAS
+}
+
+model Documentacion {
+  id               String   @id @default(cuid())
+  nombreArchivo    String   // Nombre original del archivo
+  archivoBase64    String   @db.Text // Contenido del archivo en base64
+  mimeType         String   // Tipo MIME del archivo (application/pdf, image/jpeg, etc.)
+  fechaVencimiento DateTime // Fecha de vencimiento del documento
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relación con empleado
+  empleadoId       String
+  empleado         Empleado @relation(fields: [empleadoId], references: [id], onDelete: Cascade)
+
+  // Relación con usuario (quien lo creó)
+  usuarioId        String
+  usuario          Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  
+  // Relación con tipo de documentación
+  tipoDocumentacionId String?
+  tipoDocumentacion   TipoDocumentacion? @relation(fields: [tipoDocumentacionId], references: [id], onDelete: SetNull)
+
+  @@map("documentaciones")
+  @@index([empleadoId])
+  @@index([usuarioId])
+  @@index([fechaVencimiento])
+  @@index([tipoDocumentacionId])
+}
+
+model TipoDocumentacion {
+  id            String          @id @default(cuid())
+  nombre        String          // Nombre del tipo (DNI, Certificado de Nacimiento, etc.)
+  activo        Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  // Relación con usuario
+  usuarioId     String
+  usuario       Usuario         @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  
+  // Relación con documentaciones
+  documentaciones Documentacion[]
+
+  @@map("tipos_documentacion")
+  @@index([usuarioId])
 }
