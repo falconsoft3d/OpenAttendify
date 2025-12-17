@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
         empleadoId,
         fecha: new Date(validatedData.fecha),
         texto: validatedData.texto,
-        valor: validatedData.valor,
+        valor: validatedData.valor ?? 0,
         estado: 'SOLICITADO',
       },
     });
