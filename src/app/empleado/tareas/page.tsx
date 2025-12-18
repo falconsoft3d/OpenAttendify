@@ -250,8 +250,7 @@ export default function TareasEmpleado() {
 
   const formatearHoras = (horas: number | null) => {
     if (!horas) return '-';
-    const horasNum = typeof horas === 'number' ? horas : parseFloat(horas.toString());
-    return `${horasNum.toFixed(2)}h`;
+    return `${horas.toFixed(2)}h`;
   };
 
   if (loading) {
