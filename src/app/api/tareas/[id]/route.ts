@@ -3,6 +3,7 @@ import { jwtVerify } from 'jose';
 import { prisma } from '@/lib/prisma';
 import { JWT_SECRET } from '@/lib/jwt';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 
 const tareaUpdateSchema = z.object({
   nombre: z.string().min(1).optional(),
@@ -144,7 +145,7 @@ export async function PUT(
     if (validatedData.fechaInicio !== undefined || validatedData.fechaFin !== undefined) {
       const calculado = calcularTotalHoras(fechaInicio, fechaFin);
       if (calculado !== null) {
-        totalHoras = calculado;
+        totalHoras = new Prisma.Decimal(calculado);
       }
     }
 
