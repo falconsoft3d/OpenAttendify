@@ -19,6 +19,7 @@ interface Counts {
   asistencias: number;
   usuarios: number;
   proyectos: number;
+  tareas: number;
   solicitudes: number;
   informaciones: number;
   documentaciones: number;
@@ -32,12 +33,14 @@ export default function DashboardLayout({
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [counts, setCounts] = useState<Counts>({
     empresas: 0,
     empleados: 0,
     asistencias: 0,
     usuarios: 0,
     proyectos: 0,
+    tareas: 0,
     solicitudes: 0,
     informaciones: 0,
     documentaciones: 0,
@@ -66,23 +69,25 @@ export default function DashboardLayout({
 
   const loadCounts = async () => {
     try {
-      const [empresasRes, empleadosRes, asistenciasRes, usuariosRes, proyectosRes, solicitudesRes, informacionesRes, documentacionesRes] = await Promise.all([
+      const [empresasRes, empleadosRes, asistenciasRes, usuariosRes, proyectosRes, tareasRes, solicitudesRes, informacionesRes, documentacionesRes] = await Promise.all([
         fetch('/api/empresas'),
         fetch('/api/empleados'),
         fetch('/api/asistencias'),
         fetch('/api/usuarios'),
         fetch('/api/proyectos', { credentials: 'include' }),
+        fetch('/api/tareas', { credentials: 'include' }),
         fetch('/api/solicitudes', { credentials: 'include' }),
         fetch('/api/informaciones', { credentials: 'include' }),
         fetch('/api/documentaciones', { credentials: 'include' }),
       ]);
 
-      const [empresas, empleados, asistencias, usuarios, proyectos, solicitudes, informaciones, documentaciones] = await Promise.all([
+      const [empresas, empleados, asistencias, usuarios, proyectos, tareas, solicitudes, informaciones, documentaciones] = await Promise.all([
         empresasRes.json(),
         empleadosRes.json(),
         asistenciasRes.json(),
         usuariosRes.json(),
         proyectosRes.json(),
+        tareasRes.json(),
         solicitudesRes.json(),
         informacionesRes.json(),
         documentacionesRes.json(),
@@ -94,6 +99,7 @@ export default function DashboardLayout({
         asistencias: asistencias.length || 0,
         usuarios: usuarios.length || 0,
         proyectos: proyectos.length || 0,
+        tareas: tareas.length || 0,
         solicitudes: solicitudes.solicitudes?.length || 0,
         informaciones: informaciones.informaciones?.length || 0,
         documentaciones: documentaciones.length || 0,
@@ -121,8 +127,52 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
+      {/* Toggle Button - Always visible */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="fixed top-4 bg-white p-2 rounded-lg shadow-lg hover:bg-gray-50 transition-all"
+        style={{ 
+          left: sidebarOpen ? '200px' : '12px',
+          transition: 'left 0.3s ease-in-out',
+          zIndex: 9999
+        }}
+      >
+        {sidebarOpen ? (
+          <svg
+            className="w-6 h-6 text-gray-700"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+            />
+          </svg>
+        ) : (
+          <svg
+            className="w-6 h-6 text-gray-700"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 5l7 7-7 7M5 5l7 7-7 7"
+            />
+          </svg>
+        )}
+      </button>
+
       {/* Sidebar */}
-      <aside className="w-64 bg-white shadow-lg fixed h-full">
+      <aside
+        className="bg-white shadow-lg fixed h-full transition-all duration-300 ease-in-out overflow-hidden"
+        style={{ width: sidebarOpen ? '256px' : '0px' }}
+      >
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="p-6 border-b">
@@ -184,6 +234,21 @@ export default function DashboardLayout({
               {counts.proyectos > 0 && (
                 <span className="ml-auto bg-primary-100 text-primary-600 text-xs font-semibold px-2 py-1 rounded-full">
                   {counts.proyectos}
+                </span>
+              )}
+            </Link>
+
+            <Link
+              href="/dashboard/tareas"
+              className="flex items-center space-x-3 text-gray-700 hover:bg-primary-50 hover:text-primary-600 px-4 py-3 rounded-lg transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+              <span className="font-medium">Tareas</span>
+              {counts.tareas > 0 && (
+                <span className="ml-auto bg-primary-100 text-primary-600 text-xs font-semibold px-2 py-1 rounded-full">
+                  {counts.tareas}
                 </span>
               )}
             </Link>
@@ -335,7 +400,10 @@ export default function DashboardLayout({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 ml-64 p-8">
+      <main
+        className="flex-1 p-8 transition-all duration-300 ease-in-out"
+        style={{ marginLeft: sidebarOpen ? '256px' : '0px' }}
+      >
         {children}
       </main>
     </div>

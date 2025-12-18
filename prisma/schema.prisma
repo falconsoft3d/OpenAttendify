@@ -39,6 +39,9 @@ model Usuario {
   
   // Relación con tipos de documentación
   tiposDocumentacion TipoDocumentacion[]
+  
+  // Relación con tareas
+  tareas Tarea[]
 
   @@map("usuarios")
 }
@@ -113,6 +116,9 @@ model Empleado {
   
   // Relación con documentaciones
   documentaciones Documentacion[]
+  
+  // Relación con tareas
+  tareas Tarea[]
 
   @@map("empleados")
 }
@@ -131,9 +137,51 @@ model Proyecto {
 
   // Relación con asistencias
   asistencias Asistencia[]
+  
+  // Relación con tareas
+  tareas      Tarea[]
 
   @@map("proyectos")
   @@index([empresaId])
+}
+
+model Tarea {
+  id            String      @id @default(cuid())
+  secuencia     String      @unique // Código único de la tarea (ej: TAR-00001)
+  nombre        String
+  descripcion   String?     @db.Text
+  fecha         DateTime    @default(now())
+  estado        EstadoTarea @default(BORRADOR)
+  fechaInicio   DateTime?   // Fecha y hora de inicio
+  fechaFin      DateTime?   // Fecha y hora de fin
+  totalHoras    Decimal?    @db.Decimal(10, 2) // Total de horas trabajadas
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Relación con proyecto
+  proyectoId    String
+  proyecto      Proyecto    @relation(fields: [proyectoId], references: [id], onDelete: Cascade)
+
+  // Relación con usuario (quien la creó)
+  usuarioId     String
+  usuario       Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  // Relación con empleado asignado (opcional)
+  empleadoId    String?
+  empleado      Empleado?   @relation(fields: [empleadoId], references: [id], onDelete: SetNull)
+
+  @@map("tareas")
+  @@index([proyectoId])
+  @@index([usuarioId])
+  @@index([empleadoId])
+  @@index([estado])
+}
+
+enum EstadoTarea {
+  BORRADOR
+  ASIGNADA
+  TRABAJANDO
+  COMPLETADO
 }
 
 model Asistencia {

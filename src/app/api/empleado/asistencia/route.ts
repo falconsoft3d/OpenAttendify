@@ -39,6 +39,15 @@ export async function GET(request: NextRequest) {
         orderBy: {
           checkIn: 'desc',
         },
+        include: {
+          proyecto: {
+            select: {
+              id: true,
+              codigo: true,
+              nombre: true,
+            },
+          },
+        },
       });
 
       return NextResponse.json({ asistencia: asistenciaActiva }, { status: 200 });

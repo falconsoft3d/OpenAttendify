@@ -22,6 +22,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
     }
 
+    // Obtener parámetros de paginación
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '100');
+    const skip = (page - 1) * limit;
+
+    // Obtener total de registros para paginación
+    const total = await prisma.asistencia.count({
+      where: {
+        empleado: {
+          empresa: {
+            usuarioId: payload.userId,
+          },
+        },
+      },
+    });
+
     const asistencias = await prisma.asistencia.findMany({
       where: {
         empleado: {
@@ -50,9 +67,19 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: { checkIn: 'desc' },
+      take: limit,
+      skip: skip,
     });
 
-    return NextResponse.json(asistencias);
+    return NextResponse.json({
+      asistencias,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
   } catch (error) {
     console.error('Error obteniendo asistencias:', error);
     return NextResponse.json(

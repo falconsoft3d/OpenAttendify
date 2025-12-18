@@ -20,6 +20,11 @@ interface Asistencia {
   id: string;
   checkIn: string;
   checkOut: string | null;
+  proyecto?: {
+    id: string;
+    codigo: string;
+    nombre: string;
+  } | null;
 }
 
 export default function EmpleadoPortal() {
@@ -169,15 +174,6 @@ export default function EmpleadoPortal() {
     }
   };
 
-  const cerrarSesion = async () => {
-    try {
-      await fetch('/api/empleado/logout', { method: 'POST' });
-      router.push('/empleado/login');
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error);
-    }
-  };
-
   const formatearHora = (fecha: string) => {
     return new Date(fecha).toLocaleTimeString('es-ES', {
       hour: '2-digit',
@@ -210,30 +206,12 @@ export default function EmpleadoPortal() {
     <div className="min-h-screen bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 p-4">
       <div className="max-w-md mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8 pt-4">
+        <div className="mb-8 pt-4">
           <div className="text-white">
             <h1 className="text-2xl font-bold">¡Hola, {empleado?.nombre}!</h1>
             <p className="text-blue-100 text-sm">{empleado?.cargo}</p>
             <p className="text-blue-100 text-xs mt-1">{empleado?.empresa.nombre}</p>
           </div>
-          <button
-            onClick={cerrarSesion}
-            className="text-white hover:text-blue-100 transition-colors"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-              />
-            </svg>
-          </button>
         </div>
 
         {/* Mensajes */}
@@ -306,6 +284,12 @@ export default function EmpleadoPortal() {
                   <p className="text-gray-600">
                     Entrada: {formatearHora(asistenciaActiva.checkIn)}
                   </p>
+                  {asistenciaActiva.proyecto && (
+                    <p className="text-gray-600">
+                      <span className="font-medium">Proyecto:</span>{' '}
+                      {asistenciaActiva.proyecto.codigo} - {asistenciaActiva.proyecto.nombre}
+                    </p>
+                  )}
                   <p className="text-lg font-semibold text-blue-600">
                     Tiempo trabajado: {calcularHorasTrabajadas()}
                   </p>

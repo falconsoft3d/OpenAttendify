@@ -75,8 +75,8 @@ export default function EmpleadoLoginPage() {
             <Image
               src="/logo.png"
               alt="OpenAttendify Logo"
-              width={120}
-              height={120}
+              width={80}
+              height={80}
               className="rounded-2xl shadow-lg"
               priority
             />
@@ -86,7 +86,7 @@ export default function EmpleadoLoginPage() {
         </div>
 
         {/* Login Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white rounded-2xl shadow-xl p-8 border-t-4 border-gray-300">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Iniciar Sesión</h2>
           
           <form onSubmit={handleSubmit} className="space-y-6">

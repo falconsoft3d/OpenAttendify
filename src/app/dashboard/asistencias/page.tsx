@@ -97,13 +97,14 @@ export default function AsistenciasPage() {
   const loadData = async () => {
     try {
       const [asistenciasRes, empleadosRes] = await Promise.all([
-        fetch('/api/asistencias'),
+        fetch('/api/asistencias?limit=100'),
         fetch('/api/empleados'),
       ]);
 
       if (asistenciasRes.ok) {
-        const asistenciasData = await asistenciasRes.json();
-        setAsistencias(asistenciasData);
+        const data = await asistenciasRes.json();
+        // La respuesta ahora incluye paginación
+        setAsistencias(data.asistencias || data);
       }
 
       if (empleadosRes.ok) {
